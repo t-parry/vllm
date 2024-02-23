@@ -67,7 +67,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
                       bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         weight = weights["weight"]
         #if self.separate_bias_add:
-        if bias:
+        if bias != None :
             return tgemm.mm(x, weight) + bias
         return tgemm.mm(x, weight)
         #return F.linear(x, weight, bias)
