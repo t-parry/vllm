@@ -14,6 +14,8 @@ from vllm.model_executor.parallel_utils.utils import (
 from vllm.model_executor.utils import set_weight_attrs
 from vllm.logger import init_logger
 
+from vllm.model_executor.layers.tuned_gemm import tgemm
+
 logger = init_logger(__name__)
 
 
@@ -64,11 +66,14 @@ class UnquantizedLinearMethod(LinearMethodBase):
                       x: torch.Tensor,
                       bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         weight = weights["weight"]
-        if self.separate_bias_add:
-            if bias:
-                return F.linear(x, weight) + bias
-            return F.linear(x, weight)
-        return F.linear(x, weight, bias)
+        #if self.separate_bias_add:
+        #    if bias:
+        #        return F.linear(x, weight) + bias
+        #    return F.linear(x, weight)
+        #return F.linear(x, weight, bias)
+        if bias != None :
+            return tgemm.mm(x, weight) + bias
+        return tgemm.mm(x, weight)
 
 
 class ReplicatedLinear(torch.nn.Module):
