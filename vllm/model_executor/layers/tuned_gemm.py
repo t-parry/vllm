@@ -5,8 +5,6 @@ from hipbsolidxgemm import hipb_create_extension,hipb_mm
 import os
 import yaml
 import pandas as pd
-from vllm import custom_ops
-
 
 class TunedGemm:
     def __init__(self):
