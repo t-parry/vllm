@@ -16,7 +16,7 @@ MAIN_CUDA_VERSION = "12.1"
 
 # Supported NVIDIA GPU architectures.
 NVIDIA_SUPPORTED_ARCHS = {"7.0", "7.5", "8.0", "8.6", "8.9", "9.0"}
-ROCM_SUPPORTED_ARCHS = {"gfx90a", "gfx908", "gfx906", "gfx1030", "gfx1100"}
+ROCM_SUPPORTED_ARCHS = {"gfx942", "gfx90a", "gfx908", "gfx906", "gfx1030", "gfx1100"}
 # SUPPORTED_ARCHS = NVIDIA_SUPPORTED_ARCHS.union(ROCM_SUPPORTED_ARCHS)
 
 
@@ -39,6 +39,8 @@ if _is_hip():
             "Cannot find ROCM_HOME. ROCm must be available to build the package."
         )
     NVCC_FLAGS += ["-DUSE_ROCM"]
+    NVCC_FLAGS += ["-U__HIP_NO_HALF_CONVERSIONS__"]
+    NVCC_FLAGS += ["-U__HIP_NO_HALF_OPERATORS__"]
 
 if _is_cuda() and CUDA_HOME is None:
     raise RuntimeError(
