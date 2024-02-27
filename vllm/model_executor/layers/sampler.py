@@ -11,6 +11,7 @@ from vllm.sampling_params import SamplingParams, SamplingType
 from vllm.sequence import (PromptLogprobs, SampleLogprobs, SamplerOutput,
                            SequenceData, SequenceGroupOutput, SequenceOutput)
 
+from vllm.model_executor.layers.tuned_gemm import tgemm
 
 class Sampler(nn.Module):
     """Samples the next tokens from the model's outputs.
@@ -102,7 +103,9 @@ def _get_logits(hidden_states: torch.Tensor, embedding: torch.Tensor,
                 embedding_bias: Optional[torch.Tensor],
                 vocab_size: int) -> Optional[torch.Tensor]:
     # Get the logits for the next tokens.
-    logits = torch.matmul(hidden_states, embedding.t())
+    #logits = torch.matmul(hidden_states, embedding.t())
+    logits = tgemm.mm(hidden_states, embedding)
+
     if embedding_bias is not None:
         logits += embedding_bias
     logits = tensor_model_parallel_gather(logits)
