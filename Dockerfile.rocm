@@ -25,7 +25,7 @@ WORKDIR ${APP_MOUNT}
 
 
 ARG BUILD_ROCBLAS="1"
-ARG ROCBLAS_BRANCH="aa5b5a5"
+ARG ROCBLAS_BRANCH="develop"
 
 RUN if [ "$BUILD_ROCBLAS" = "1" ]; then \
     echo "ROCBLAS_BRANCH is $ROCBLAS_BRANCH"; \
@@ -46,7 +46,7 @@ RUN if [ "$BUILD_ROCBLAS" = "1" ] ; then \
 
 
 ARG BUILD_ROCSOLVER=$BUILD_ROCBLAS
-ARG ROCSOLVER_BRANCH="6bcc458"
+ARG ROCSOLVER_BRANCH="develop"
 
 RUN if [ "$BUILD_ROCSOLVER" = "1" ]; then \
     echo "ROCSOLVER_RBANCH is $ROCSOLVER_BRANCH"; \
@@ -66,7 +66,7 @@ RUN if [ "$BUILD_ROCSOLVER" = "1" ] ; then \
 
 
 ARG BUILD_HIPBLAS="1"
-ARG HIPBLAS_BRANCH="75ce021"
+ARG HIPBLAS_BRANCH="develop"
 
 RUN if [ "$BUILD_HIPBLAS" = "1" ]; then \
     echo "HIPBLAS_BRANCH is $HIPBLAS_BRANCH"; \
@@ -89,7 +89,7 @@ RUN if [ "$BUILD_HIPBLAS" = "1" ] ; then \
 
 # whether to build hipBLASLt
 ARG BUILD_HIPBLASLT="1"
-ARG HIPBLASLT_BRANCH="c8c3cac"
+ARG HIPBLASLT_BRANCH="develop"
 
 RUN if [ "$BUILD_HIPBLASLT" = "1" ]; then \
     echo "HIPBLASLT_BRANCH is $HIPBLASLT_BRANCH"; \
@@ -111,7 +111,7 @@ RUN if [ "$BUILD_HIPBLASLT" = "1" ] ; then \
 
 
 ARG BUILD_HIPSOLVER="1"
-ARG HIPSOLVER_BRANCH="3d28b8b"
+ARG HIPSOLVER_BRANCH="develop"
 RUN if [ "$BUILD_HIPSOLVER" = "1" ]; then \
     echo "HIPSOLVER_BRANCH is $HIPSOLVER_BRANCH"; \
     fi
