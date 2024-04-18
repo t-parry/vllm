@@ -293,7 +293,11 @@ RUN cd /app \
 
 
 # Install gradlib
-RUN cd /app/vllm/gradlib \
+RUN cd /app/vllm/ \
+    && git remote add dllehr https://github.com/dllehr-amd/vllm.git \
+    && git fetch dllehr v0.3.3_divakar \
+    && git checkout dllehr/v0.3.3_divakar gradlib \
+    && cd gradlib \
     && pip install . \
     && cd ../..
 

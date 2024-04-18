@@ -1,3 +1,0 @@
-[submodule "gradlib"]
-	path = gradlib
-	url = git@github.com:ROCm/gradlib.git
