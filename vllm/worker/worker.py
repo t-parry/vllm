@@ -10,6 +10,7 @@ from vllm.config import (CacheConfig, DeviceConfig, LoRAConfig, ModelConfig,
                          ParallelConfig, SchedulerConfig, VisionLanguageConfig)
 from vllm.lora.request import LoRARequest
 from vllm.model_executor import set_random_seed
+from vllm.model_executor.parallel_utils import cupy_utils
 from vllm.model_executor.parallel_utils import pynccl_utils
 from vllm.model_executor.parallel_utils.communication_op import (
     broadcast_tensor_dict)
@@ -21,6 +22,7 @@ from vllm.utils import is_hip
 from vllm.worker.cache_engine import CacheEngine
 from vllm.worker.model_runner import ModelRunner
 from vllm.worker.worker_base import WorkerBase
+from vllm.utils import is_hip
 
 
 class Worker(WorkerBase):
@@ -283,16 +285,29 @@ def init_worker_distributed_environment(
                 "pynccl is already initialized but the pynccl world "
                 "size does not match parallel_config.world_size "
                 f"({pynccl_world_size} vs. {parallel_config.world_size}).")
-    elif parallel_config.world_size > 1 and not is_hip():
+    elif cupy_utils.is_initialized():
+        cupy_world_size = cupy_utils.get_world_size()
+        if cupy_world_size != parallel_config.world_size:
+            raise RuntimeError(
+                "cupy is already initialized but the cupy world "
+                "size does not match parallel_config.world_size "
+                f"({cupy_world_size} vs. {parallel_config.world_size}).")
+    elif parallel_config.world_size > 1:
         # NOTE(woosuk): We don't initialize pynccl process group when world size
         # is 1.
-        # NOTE(mattwong): We do not use pynccl on ROCm.
-        pynccl_utils.init_process_group(
-            world_size=parallel_config.world_size,
-            local_rank=local_rank,
-            rank=rank,
-            init_method=distributed_init_method,
-        )
+        if is_hip():
+            cupy_utils.init_process_group(
+                world_size=parallel_config.world_size,
+                rank=rank,
+                host="localhost",
+            )
+        else:
+            pynccl_utils.init_process_group(
+                world_size=parallel_config.world_size,
+                local_rank=local_rank,
+                rank=rank,
+                init_method=distributed_init_method,
+            )
 
     ensure_model_parallel_initialized(parallel_config.tensor_parallel_size,
                                       parallel_config.pipeline_parallel_size)
@@ -305,6 +320,8 @@ def init_worker_distributed_environment(
     torch.distributed.all_reduce(torch.zeros(1).cuda())
     if pynccl_utils.is_initialized():
         pynccl_utils.all_reduce(torch.zeros(1).cuda())
+    elif cupy_utils.is_initialized():
+        cupy_utils.all_reduce(torch.zeros(1).cuda())
 
 
 def _check_if_gpu_supports_dtype(torch_dtype: torch.dtype):

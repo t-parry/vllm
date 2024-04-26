@@ -4,12 +4,14 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 from torch.distributed import ProcessGroup
 
+from vllm.model_executor.parallel_utils import cupy_utils
 from vllm.model_executor.parallel_utils import pynccl_utils
 from vllm.model_executor.parallel_utils.custom_all_reduce import (
     custom_all_reduce)
 from vllm.model_executor.parallel_utils.parallel_state import (
     get_tensor_model_parallel_group, get_tensor_model_parallel_rank,
-    get_tensor_model_parallel_world_size, is_pynccl_enabled_for_all_reduce)
+    get_tensor_model_parallel_world_size, is_pynccl_enabled_for_all_reduce,
+    is_cupy_enabled_for_all_reduce)
 
 
 def tensor_model_parallel_all_reduce(input_: torch.Tensor) -> torch.Tensor:
@@ -33,6 +35,8 @@ def tensor_model_parallel_all_reduce(input_: torch.Tensor) -> torch.Tensor:
     if is_pynccl_enabled_for_all_reduce():
         # TODO: support multiple parallel groups.
         pynccl_utils.all_reduce(input_)
+    elif is_cupy_enabled_for_all_reduce():
+        cupy_utils.all_reduce(input_)
     else:
         torch.distributed.all_reduce(input_,
                                      group=get_tensor_model_parallel_group())

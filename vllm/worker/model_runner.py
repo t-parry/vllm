@@ -15,11 +15,11 @@ from vllm.lora.request import LoRARequest
 from vllm.lora.worker_manager import LRUCacheWorkerLoRAManager
 from vllm.model_executor import SamplingMetadata
 from vllm.model_executor.model_loader import get_model
-from vllm.model_executor.parallel_utils import custom_all_reduce, pynccl_utils
+from vllm.model_executor.parallel_utils import custom_all_reduce, cupy_utils, pynccl_utils
 from vllm.model_executor.parallel_utils.communication_op import (
     broadcast_tensor_dict)
 from vllm.model_executor.parallel_utils.parallel_state import (
-    with_pynccl_for_all_reduce)
+    with_pynccl_for_all_reduce, with_cupy_for_all_reduce)
 from vllm.sampling_params import SamplingParams, SamplingType
 from vllm.sequence import (MultiModalData, SamplerOutput, SequenceData,
                            SequenceGroupMetadata)
@@ -805,6 +805,7 @@ class ModelRunner:
         # NOTE(woosuk): This is a hack to ensure that the NCCL backend is never
         # deleted before the CUDA graphs.
         self.pynccl_backend = pynccl_utils.get_nccl_backend()
+        self.cupy_backend = cupy_utils.get_nccl_backend()
 
         assert not self.model_config.enforce_eager
         logger.info("Capturing the model for CUDA graphs. This may lead to "
@@ -894,6 +895,7 @@ class ModelRunner:
         # more stable than cupy, we can remove this, e.g. in v0.4.1.
         self.graph_runners.clear()
         self.pynccl_backend = None
+        self.cupy_backend = None
 
     @property
     def vocab_size(self) -> int:
@@ -921,7 +923,7 @@ class CUDAGraphRunner:
         # Run the model once without capturing the graph.
         # This is to make sure that the captured graph does not include the
         # kernel launches for initial benchmarking (e.g., Triton autotune).
-        with _maybe_pynccl():
+        with _maybe_pynccl_or_cupy():
             self.model(
                 input_ids,
                 positions,
@@ -936,7 +938,7 @@ class CUDAGraphRunner:
         # https://stackoverflow.com/questions/31039022/python-multi-line-with-statement
         self.graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(self.graph, pool=memory_pool):  # noqa: SIM117
-            with _maybe_pynccl():
+            with _maybe_pynccl_or_cupy():
                 hidden_states = self.model(
                     input_ids,
                     positions,
@@ -989,10 +991,14 @@ class CUDAGraphRunner:
 
 
 @contextlib.contextmanager
-def _maybe_pynccl():
+def _maybe_pynccl_or_cupy():
     if pynccl_utils.is_initialized(
     ) and not custom_all_reduce.is_initialized():
         with with_pynccl_for_all_reduce():
+            yield
+    elif cupy_utils.is_initialized(
+    ) and not custom_all_reduce.is_initialized():
+        with with_cupy_for_all_reduce():
             yield
     else:
         yield

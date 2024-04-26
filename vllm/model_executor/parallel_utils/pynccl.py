@@ -253,6 +253,7 @@ class NCCLCommunicator:
         for i, byte in enumerate(byte_list):
             self.unique_id.internal[i] = byte
         self.comm = ctypes.c_void_p()
+        # The following line causes issues with RCCL
         result = _c_ncclCommInitRank(ctypes.byref(self.comm), self.world_size,
                                      self.unique_id, self.rank)
         assert result == 0
