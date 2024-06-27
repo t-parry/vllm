@@ -33,17 +33,17 @@ class TunedGemm:
 
         if envs.VLLM_SKINNY_VERSION == "llmm":
             print("Skinny func: LLMM1")
-            self.skinny_func = self.apply_skinny
+            self.skinny_func = self.apply_skinny_llmm
         elif envs.VLLM_SKINNY_VERSION == "splitk":
             print("Skinny func: splitk")
-            self.skinny_func = self.apply_skinny1
+            self.skinny_func = self.apply_skinny_splitk
         elif envs.VLLM_SKINNY_VERSION == "none":
             print("Skinny func: None")
-            self.skinny_func = self.apply_none
+            self.skinny_func = self.apply_skinny_none
         else:
             assert False, f"Unknown skinny version: {envs.VLLM_SKINNY_VERSION}"
 
-    def apply_none(self, *args):
+    def apply_skinny_none(self, *args):
         return None
 
     def load_best_sols(self):
@@ -66,7 +66,7 @@ class TunedGemm:
     def query_sol(self, m, n, k):
         return self.solids.get((m, n, k), (0, 0))
 
-    def apply_skinny1(self, m, n, k, inp_view, weights):
+    def apply_skinny_splitk(self, m, n, k, inp_view, weights):
         if inp_view.dtype != torch.float16 or k % 8 != 0:
             return None
         if m > 8 and n <= 4:
@@ -86,7 +86,7 @@ class TunedGemm:
         else:
             return None
 
-    def apply_skinny(self, m, n, k, inp_view, weights):
+    def apply_skinny_llmm(self, m, n, k, inp_view, weights):
         if n == 1 and inp_view.dtype == torch.float16:
             if (k == 8192 and
                 (m == 1280 or m == 7168)) or (k == 3584 and m == 8192):
