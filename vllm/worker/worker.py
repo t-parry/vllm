@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import torch
 import torch.distributed
 
+from vllm import envs
 from vllm.config import (CacheConfig, DeviceConfig, LoadConfig, LoRAConfig,
                          ModelConfig, ParallelConfig, SchedulerConfig,
                          SpeculativeConfig, VisionLanguageConfig)
@@ -226,7 +227,7 @@ class Worker(WorkerBase):
         self,
         execute_model_req: Optional[ExecuteModelRequest] = None
     ) -> List[Union[SamplerOutput, PoolerOutput]]:
-        if not self.is_driver_worker:
+        if not envs.DISABLE_BROADCAST and not self.is_driver_worker:
             self._execute_model_non_driver()
             return []
 

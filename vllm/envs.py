@@ -38,6 +38,8 @@ if TYPE_CHECKING:
     VLLM_INSTALL_PUNICA_KERNELS: bool = False
     CMAKE_BUILD_TYPE: Optional[str] = None
     VERBOSE: bool = False
+    DISABLE_BROADCAST: bool = False
+    VLLM_SKINNY_VERSION: str = "llmm"
 
 # The begin-* and end* here are used by the documentation generator
 # to extract the used env vars.
@@ -219,6 +221,12 @@ environment_variables: Dict[str, Callable[[], Any]] = {
     # Both spawn and fork work
     "VLLM_WORKER_MULTIPROC_METHOD":
     lambda: os.getenv("VLLM_WORKER_MULTIPROC_METHOD", "spawn"),
+
+    "DISABLE_BROADCAST":
+    lambda: bool(os.getenv("DISABLE_BROADCAST", 0)),
+
+    "VLLM_SKINNY_VERSION":
+    lambda: os.getenv("VLLM_SKINNY_VERSION", "llmm"),
 }
 
 # end-env-vars-definition
