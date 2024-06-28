@@ -30,7 +30,7 @@ def main(args: argparse.Namespace):
               ray_workers_use_nsight=args.ray_workers_use_nsight,
               enable_chunked_prefill=args.enable_chunked_prefill,
               download_dir=args.download_dir,
-              block_size=args.block_size
+              block_size=args.block_size,
               max_model_len=max(args.input_len, args.output_len))
 
     sampling_params = SamplingParams(
