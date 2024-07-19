@@ -15,7 +15,7 @@ import os
 
 import pytest
 
-from vllm.utils import cuda_device_count_stateless
+from vllm.utils import cuda_device_count_stateless, is_hip
 
 model = os.environ["TEST_DIST_MODEL"]
 
@@ -23,6 +23,11 @@ if model.startswith("llava-hf/llava"):
     from ..models.test_llava import models, run_test
 elif model.startswith("microsoft/Phi-3-vision"):
     from ..models.test_phi3v import models, run_test
+
+    # ROCm Triton FA runs into issues with these tests, use other backends
+    # FIXME (mattwong, gshtrasb, hongxiayan)
+    if is_hip():
+        os.environ["VLLM_USE_TRITON_FLASH_ATTN"] = "0"
 else:
     raise NotImplementedError(f"Unsupported model: {model}")
 

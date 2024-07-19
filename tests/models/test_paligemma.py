@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Tuple, Type
 
 import pytest
@@ -22,6 +23,11 @@ HF_IMAGE_PROMPTS = IMAGE_ASSETS.prompts({
 IMAGE_TOKEN_ID = 257152
 
 models = ["google/paligemma-3b-mix-224"]
+
+# ROCm Triton FA runs into issues with these tests, use other backends
+# FIXME (mattwong, gshtrasb, hongxiayan)
+if is_hip():
+    os.environ["VLLM_USE_TRITON_FLASH_ATTN"] = "0"
 
 
 def vllm_to_hf_output(vllm_output: Tuple[List[int], str,
