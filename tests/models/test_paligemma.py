@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 
 from vllm.multimodal.utils import rescale_image_size
 from vllm.sequence import SampleLogprobs
+from vllm.utils import is_hip
 
 from ..conftest import IMAGE_ASSETS, HfRunner, VllmRunner, _ImageAssets
 from .utils import check_logprobs_close
@@ -130,7 +131,14 @@ def run_test(
         [0.25, 0.5, 1.0],
     ],
 )
-@pytest.mark.parametrize("dtype", ["float", "half"])
+@pytest.mark.parametrize("dtype", [
+    pytest.param(
+        "float",
+        marks=pytest.mark.skipif(
+            is_hip(),
+            reason="ROCm FA does not currently support 32-bit precision "
+            "for paligemma")), "half"
+])
 @pytest.mark.parametrize("max_tokens", [128])
 @pytest.mark.parametrize("num_logprobs", [5])
 def test_models(hf_runner, vllm_runner, image_assets, model, size_factors,
