@@ -103,12 +103,12 @@ class MixtralMoE(nn.Module):
         self.w13_weight = nn.Parameter(
             torch.empty(self.num_total_experts,
                         2 * self.intermediate_size,
-                        self.hidden_size,
+                        self.hidden_size + 128,
                         dtype=params_dtype))
         self.w2_weight = nn.Parameter(
             torch.empty(self.num_total_experts,
                         self.hidden_size,
-                        self.intermediate_size,
+                        self.intermediate_size + 128,
                         dtype=params_dtype))
 
         set_weight_attrs(self.w13_weight, {
@@ -171,19 +171,30 @@ class MixtralMoE(nn.Module):
         shard_size = self.intermediate_size
         shard = slice(tp_rank * shard_size, (tp_rank + 1) * shard_size)
         if weight_name.endswith("w1.weight"):
-            param_data[expert_id, 0:shard_size, :] = loaded_weight[shard, :]
+            param_data[expert_id, 0:shard_size, :] = F.pad(
+                loaded_weight[shard, :], (0, 128), "constant",
+                0) if loaded_weight[shard, :].shape != param_data[
+                    expert_id,
+                    0:shard_size, :].shape else loaded_weight[shard, :]
         if weight_name.endswith("w3.weight"):
-            param_data[expert_id,
-                       shard_size:2 * shard_size, :] = loaded_weight[shard, :]
+            param_data[expert_id, shard_size:2 * shard_size, :] = F.pad(
+                loaded_weight[shard, :], (0, 128), "constant",
+                0) if loaded_weight[shard, :].shape != param_data[
+                    expert_id, shard_size:2 *
+                    shard_size, :].shape else loaded_weight[shard, :]
         if weight_name.endswith("w2.weight"):
-            param_data[expert_id, :, :] = loaded_weight[:, shard]
+            param_data[expert_id, :, :] = F.pad(
+                loaded_weight[:, shard], (0, 128), "constant",
+                0) if loaded_weight[:, shard].shape != param_data[
+                    expert_id, :, :].shape else loaded_weight[:, shard]
         if "act_scale" in weight_name or "weight_scale" in weight_name:
             param_data[expert_id] = loaded_weight
 
     def process_weights_after_loading(self):
         # Fp8 is the only case where we need to process after loading.
         if not self.use_fp8:
-            if envs.VLLM_MOE_PADDING:
+            if False and envs.VLLM_MOE_PADDING:
+                print(f"Me be padding! {self.w13_weight.shape}")
                 self.w13_weight = nn.Parameter(F.pad(self.w13_weight.data,
                                                      (0, 128), "constant", 0),
                                                requires_grad=False)
