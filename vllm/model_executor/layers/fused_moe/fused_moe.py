@@ -14,7 +14,7 @@ from vllm import envs
 from vllm.logger import init_logger
 
 logger = init_logger(__name__)
-padding_size = 128 if envs.VLLM_MOE_PADDING else 0
+padding_size = 128 # if envs.VLLM_MOE_PADDING else 0
 
 
 @triton.jit
