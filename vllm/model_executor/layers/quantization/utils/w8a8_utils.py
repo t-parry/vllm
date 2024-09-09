@@ -10,7 +10,7 @@ from vllm.utils import is_hip
 # providing scaling factor for result. This value is created
 # as global value to avoid multiple tensor allocations, and
 # can be removed once pytorch fixes the bug.
-TORCH_SCALED_MM_SCALE_RESULT = torch.ones(1).cuda() if is_hip() else None
+# TORCH_SCALED_MM_SCALE_RESULT = torch.ones(1).cuda() if is_hip() else None
 
 
 def cutlass_fp8_supported() -> bool:
@@ -134,17 +134,17 @@ def apply_fp8_linear(
 
         if per_tensor_weights and per_tensor_activations:
             # Fused GEMM_DQ
-            global TORCH_SCALED_MM_SCALE_RESULT
-            if TORCH_SCALED_MM_SCALE_RESULT.device != weight.device:
-                TORCH_SCALED_MM_SCALE_RESULT = TORCH_SCALED_MM_SCALE_RESULT.to(
-                    weight.device)
+            # global TORCH_SCALED_MM_SCALE_RESULT
+            # if TORCH_SCALED_MM_SCALE_RESULT.device != weight.device:
+            #     TORCH_SCALED_MM_SCALE_RESULT = TORCH_SCALED_MM_SCALE_RESULT.to(
+            #         weight.device)
             output = torch._scaled_mm(
                 qinput,
                 weight,
                 out_dtype=out_dtype,
                 scale_a=x_scale,
                 scale_b=weight_scale,
-                scale_result=TORCH_SCALED_MM_SCALE_RESULT,
+                # scale_result=TORCH_SCALED_MM_SCALE_RESULT,
                 bias=bias)
             # A fix for discrepancy in scaled_mm which returns tuple
             # for torch < 2.5 and a single value in torch >= 2.5
