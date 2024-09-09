@@ -1,5 +1,5 @@
 # default base image
-ARG BASE_IMAGE="rocm/pytorch:rocm6.1.2_ubuntu20.04_py3.9_pytorch_staging"
+ARG BASE_IMAGE="rocm/pytorch-private:20240819_exec_dashboard_unified_rc3_added_triton"
 
 ARG COMMON_WORKDIR=/app
 
@@ -8,6 +8,7 @@ ARG BUILD_HIPBLASLT="1"
 ARG BUILD_RCCL="1"
 ARG BUILD_FA="1"
 ARG BUILD_TRITON="1"
+ARG BUILD_PYTORCH="1"
 # This ARG should also be "0" or "1". If "1", the vLLM development directory is obtained via git clone.
 # If "0", it is copied in from the local working directory.
 ARG REMOTE_VLLM="0"
@@ -39,7 +40,7 @@ WORKDIR ${COMMON_WORKDIR}
 # -----------------------
 # hipBLASLt build stages
 FROM base AS build_hipblaslt
-ARG HIPBLASLT_BRANCH="6f65c6e"
+ARG HIPBLASLT_BRANCH="8b71e7a8d26ba95774fdc372883ee0be57af3d28"
 RUN git clone https://github.com/ROCm/hipBLASLt \
     && cd hipBLASLt \
     && git checkout ${HIPBLASLT_BRANCH} \
@@ -69,8 +70,9 @@ FROM export_rccl_${BUILD_RCCL} AS export_rccl
 # -----------------------
 # flash attn build stages
 FROM base AS build_flash_attn
-ARG FA_BRANCH="ae7928c"
+ARG FA_BRANCH="3cea2fb"
 ARG FA_REPO="https://github.com/ROCm/flash-attention.git"
+ARG PYTORCH_ROCM_ARCH="gfx90a;gfx942"
 RUN git clone ${FA_REPO} \
     && cd flash-attention \
     && git checkout ${FA_BRANCH} \
@@ -85,7 +87,7 @@ FROM export_flash_attn_${BUILD_FA} AS export_flash_attn
 # -----------------------
 # Triton build stages
 FROM base AS build_triton
-ARG TRITON_BRANCH="6ddb79b"
+ARG TRITON_BRANCH="main"
 ARG TRITON_REPO="https://github.com/OpenAI/triton.git"
 RUN git clone ${TRITON_REPO} \
     && cd triton \
@@ -97,6 +99,25 @@ ARG COMMON_WORKDIR
 COPY --from=build_triton ${COMMON_WORKDIR}/triton/python/dist/*.whl /
 FROM scratch AS export_triton_0
 FROM export_triton_${BUILD_TRITON} AS export_triton
+
+# -----------------------
+# Pytorch build stages
+FROM base AS build_pytorch
+ARG PYTORCH_BRANCH="cedc116e10456fcac2c5ff001145bf0b619713a8"
+ARG PYTORCH_REPO="https://github.com/ROCm/pytorch.git"
+ARG PYTORCH_ROCM_ARCH="gfx90a;gfx942"
+ARG CMAKE_PREFIX_PATH=$(python3 -c 'import sys; print(sys.prefix)')
+RUN git clone ${PYTORCH_REPO} \
+    && cd pytorch \
+    && git checkout ${PYTORCH_BRANCH} \
+    && pip install -r requirements.txt \
+    && python3 tools/amd_build/build_amd.py
+    && python3 setup.py bdist_wheel --dist-dir=dist
+FROM scratch AS export_pytorch_1
+ARG COMMON_WORKDIR
+COPY --from=build_pytorch ${COMMON_WORKDIR}/pytorch/python/dist/*.whl /
+FROM scratch AS export_pytorch_0
+FROM export_pytorch_${BUILD_PYTORCH} AS export_pytorch
 
 # AMD-SMI build stages
 FROM base AS build_amdsmi
@@ -189,6 +210,13 @@ RUN --mount=type=bind,from=export_triton,src=/,target=/install \
     if ls /install/*.whl; then \
         # Preemptively uninstall to prevent pip same-version no-installs
         pip uninstall -y triton \
+        && pip install /install/*.whl; \
+    fi
+
+RUN --mount=type=bind,from=export_pytorch,src=/,target=/install \
+    if ls /install/*.whl; then \
+        # Preemptively uninstall to prevent pip same-version no-installs
+        pip uninstall -y pytorch \
         && pip install /install/*.whl; \
     fi
 
