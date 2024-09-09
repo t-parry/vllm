@@ -141,7 +141,7 @@ RUN git clone ${PYTORCH_REPO} \
     && cd pytorch \
     && git checkout ${PYTORCH_BRANCH} \
     && pip install -r requirements.txt \
-    && python3 tools/amd_build/build_amd.py
+    && python3 tools/amd_build/build_amd.py \
     && python3 setup.py bdist_wheel --dist-dir=dist
 FROM scratch AS export_pytorch_1
 ARG COMMON_WORKDIR
