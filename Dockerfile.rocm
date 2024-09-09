@@ -121,7 +121,7 @@ ARG TRITON_REPO="https://github.com/OpenAI/triton.git"
 RUN git clone ${TRITON_REPO} \
     && cd triton \
     && git checkout ${TRITON_BRANCH} \
-    && pip install pybind11 \
+    && pip install -y pybind11 \
     && cd python \
     && python3 setup.py bdist_wheel --dist-dir=dist
 FROM scratch AS export_triton_1
@@ -140,7 +140,8 @@ ARG CMAKE_PREFIX_PATH=$(python3 -c 'import sys; print(sys.prefix)')
 RUN git clone ${PYTORCH_REPO} \
     && cd pytorch \
     && git checkout ${PYTORCH_BRANCH} \
-    && pip install -r requirements.txt \
+    && pip uninstall -y torch \
+    && pip install -y -r requirements.txt \
     && python3 tools/amd_build/build_amd.py \
     && python3 setup.py bdist_wheel --dist-dir=dist
 FROM scratch AS export_pytorch_1
