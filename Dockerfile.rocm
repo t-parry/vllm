@@ -118,7 +118,7 @@ RUN git clone ${PYTORCH_REPO} \
     && pip install dist/*.whl
 FROM scratch AS export_pytorch_1
 ARG COMMON_WORKDIR
-COPY --from=build_pytorch ${COMMON_WORKDIR}/pytorch/python/dist/*.whl /
+COPY --from=build_pytorch ${COMMON_WORKDIR}/pytorch/dist/*.whl /
 FROM scratch AS export_pytorch_0
 FROM export_pytorch_${BUILD_PYTORCH} AS export_pytorch
 
