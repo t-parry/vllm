@@ -4,7 +4,7 @@ ARG BASE_IMAGE="rocm/pytorch-private:20240819_exec_dashboard_unified_rc3_added_t
 ARG COMMON_WORKDIR=/app
 
 # The following ARGs should be "0" or "1". If "1", the respective component will be built and installed on top of the base image
-ARG BUILD_HIPBLASLT="1"
+ARG BUILD_HIPBLASLT="0"
 ARG BUILD_RCCL="1"
 ARG BUILD_FA="1"
 ARG BUILD_TRITON="1"
@@ -40,7 +40,7 @@ WORKDIR ${COMMON_WORKDIR}
 # -----------------------
 # hipBLASLt build stages
 FROM base AS build_hipblaslt
-ARG HIPBLASLT_BRANCH="8b71e7a8d26ba95774fdc372883ee0be57af3d28"
+ARG HIPBLASLT_BRANCH="6f65c6e"
 RUN git clone https://github.com/ROCm/hipBLASLt \
     && cd hipBLASLt \
     && git checkout ${HIPBLASLT_BRANCH} \
@@ -114,8 +114,7 @@ RUN git clone ${PYTORCH_REPO} \
     && pip uninstall -y torch \
     && pip install -r requirements.txt \
     && python3 tools/amd_build/build_amd.py \
-    && python3 setup.py bdist_wheel --dist-dir=dist \
-    && pip install dist/*.whl
+    && python3 setup.py bdist_wheel --dist-dir=dist
 FROM scratch AS export_pytorch_1
 ARG COMMON_WORKDIR
 COPY --from=build_pytorch ${COMMON_WORKDIR}/pytorch/dist/*.whl /
@@ -153,9 +152,16 @@ if ls /install/*.deb; then \
     && sed -i 's/, hipblaslt-dev \(.*\), hipcub-dev/, hipcub-dev/g' /var/lib/dpkg/status \
     && sed -i 's/, hipblaslt \(.*\), hipfft/, hipfft/g' /var/lib/dpkg/status; \
 fi
+# Install pytorch
+RUN --mount=type=bind,from=export_pytorch,src=/,target=/install \
+    if ls /install/*.whl; then \
+        # Preemptively uninstall to prevent pip same-version no-installs
+        pip uninstall -y torch \
+        && pip install /install/*.whl; \
+    fi
 # Build vLLM
 RUN cd vllm \
-    && pip show torch && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
+    && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
 # Build gradlib
 RUN cd vllm/gradlib \
     && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
