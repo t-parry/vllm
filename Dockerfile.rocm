@@ -216,6 +216,13 @@ RUN --mount=type=bind,from=export_triton,src=/,target=/install \
         && pip install /install/*.whl; \
     fi
 
+RUN --mount=type=bind,from=export_pytorch,src=/,target=/install \
+    if ls /install/*.whl; then \
+        # Preemptively uninstall to prevent pip same-version no-installs
+        pip uninstall -y torch \
+        && pip install /install/*.whl; \
+    fi
+
 RUN --mount=type=bind,from=export_amdsmi,src=/,target=/install \
     # Preemptively uninstall to prevent pip same-version no-installs
     pip uninstall -y amdsmi \
