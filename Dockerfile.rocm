@@ -135,7 +135,7 @@ FROM base AS fetch_vllm_0
 ONBUILD COPY ./ vllm/
 FROM base AS fetch_vllm_1
 ARG VLLM_REPO="https://github.com/ROCm/vllm.git"
-ARG VLLM_BRANCH="main"
+ARG VLLM_BRANCH="tiger_builld_docker_image_main"
 ONBUILD RUN git clone ${VLLM_REPO} \
 	    && cd vllm \
 	    && git checkout ${VLLM_BRANCH}
@@ -155,7 +155,7 @@ if ls /install/*.deb; then \
 fi
 # Build vLLM
 RUN cd vllm \
-    && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
+    && pip show torch && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
 # Build gradlib
 RUN cd vllm/gradlib \
     && python3 setup.py clean --all && python3 setup.py bdist_wheel --dist-dir=dist
