@@ -92,7 +92,7 @@ ARG TRITON_REPO="https://github.com/OpenAI/triton.git"
 RUN git clone ${TRITON_REPO} \
     && cd triton \
     && git checkout ${TRITON_BRANCH} \
-    && pip install -y pybind11 \
+    && pip install pybind11 \
     && cd python \
     && python3 setup.py bdist_wheel --dist-dir=dist
 FROM scratch AS export_triton_1
@@ -112,9 +112,10 @@ RUN git clone ${PYTORCH_REPO} \
     && cd pytorch \
     && git checkout ${PYTORCH_BRANCH} \
     && pip uninstall -y torch \
-    && pip install -y -r requirements.txt \
+    && pip install -r requirements.txt \
     && python3 tools/amd_build/build_amd.py \
-    && python3 setup.py bdist_wheel --dist-dir=dist
+    && python3 setup.py bdist_wheel --dist-dir=dist \
+    && pip install dist/*.whl
 FROM scratch AS export_pytorch_1
 ARG COMMON_WORKDIR
 COPY --from=build_pytorch ${COMMON_WORKDIR}/pytorch/python/dist/*.whl /
@@ -212,13 +213,6 @@ RUN --mount=type=bind,from=export_triton,src=/,target=/install \
     if ls /install/*.whl; then \
         # Preemptively uninstall to prevent pip same-version no-installs
         pip uninstall -y triton \
-        && pip install /install/*.whl; \
-    fi
-
-RUN --mount=type=bind,from=export_pytorch,src=/,target=/install \
-    if ls /install/*.whl; then \
-        # Preemptively uninstall to prevent pip same-version no-installs
-        pip uninstall -y pytorch \
         && pip install /install/*.whl; \
     fi
 
