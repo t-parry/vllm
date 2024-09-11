@@ -23,6 +23,20 @@
   #define UNREACHABLE_CODE assert(false);
 #endif
 
+#if defined(__HIPCC__) && (defined(__gfx90a__) || defined(__gfx940__) || \
+                           defined(__gfx941__) || defined(__gfx942__))
+  #define __HIP__MI300_MI250__
+#endif
+
+#if defined(NDEBUG)
+  #undef NDEBUG
+  #include <assert.h>
+  #define UNREACHABLE_CODE assert(false);
+  #define NDEBUG
+#else
+  #define UNREACHABLE_CODE assert(false);
+#endif
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define DIVIDE_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
@@ -43,7 +57,6 @@ typedef struct _Half8 {
 using bit16_t = uint16_t;
 using bit16x4 = __attribute__((__vector_size__(4 * sizeof(uint16_t)))) uint16_t;
 typedef bit16x4 _B16x4;
-
 typedef struct _B16x8 {
   _B16x4 xy[2];
 } _B16x8;
