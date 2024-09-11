@@ -1139,10 +1139,10 @@ void paged_attention_custom_launcher(
 #define CALL_CUSTOM_LAUNCHER_BLK(T, KVT, KV_DTYPE, HEAD_SIZE)     \
   switch (block_size) {                                           \
     case 16:                                                      \
-      CALL_CUSTOM_LAUNCHER(T, KVT, KV_DTYPE, static_cast<int>(16), HEAD_SIZE);      \
+      CALL_CUSTOM_LAUNCHER(T, KVT, KV_DTYPE, 16, HEAD_SIZE);      \
       break;                                                      \
     case 32:                                                      \
-      CALL_CUSTOM_LAUNCHER(T, KVT, KV_DTYPE, static_cast<int>(32), HEAD_SIZE);      \
+      CALL_CUSTOM_LAUNCHER(T, KVT, KV_DTYPE, 32, HEAD_SIZE);      \
       break;                                                      \
     default:                                                      \
       TORCH_CHECK(false, "Unsupported block size: ", block_size); \
