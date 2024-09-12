@@ -99,7 +99,14 @@ FROM export_pytorch_${BUILD_PYTORCH} AS export_pytorch
 # -----------------------
 # flash attn build stages
 FROM base AS build_flash_attn
-ARG FA_BRANCH="ae7928c"
+# Install pytorch
+RUN --mount=type=bind,from=export_pytorch,src=/,target=/install \
+    if ls /install/*.whl; then \
+        # Preemptively uninstall to prevent pip same-version no-installs
+        pip uninstall -y torch \
+        && pip install /install/*.whl; \
+    fi
+ARG FA_BRANCH="3cea2fb"
 ARG FA_REPO="https://github.com/ROCm/flash-attention.git"
 ARG PYTORCH_ROCM_ARCH="gfx90a;gfx942"
 # Install pytorch
