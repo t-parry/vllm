@@ -53,6 +53,7 @@ class DbrxRouter(nn.Module):
 
 
 class DbrxExperts(FusedMoE):
+
     def __init__(
         self,
         config: DbrxConfig,
@@ -106,6 +107,7 @@ class DbrxExperts(FusedMoE):
             ).transpose(1, 2)
             param_data[:] = loaded_weight[:, :, shard]
 
+
 class DbrxMoE(nn.Module):
     """A tensor-parallel MoE implementation for DBRX.
 
@@ -128,10 +130,9 @@ class DbrxMoE(nn.Module):
 
         self.router = DbrxRouter(config, self.params_dtype)
 
-        self.experts = DbrxExperts(
-            config=config,
-            quant_config=quant_config,
-            params_dtype=self.params_dtype)
+        self.experts = DbrxExperts(config=config,
+                                   quant_config=quant_config,
+                                   params_dtype=self.params_dtype)
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         orig_shape = hidden_states.shape
@@ -389,11 +390,11 @@ class DbrxForCausalLM(nn.Module):
         return next_tokens
 
     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
-        
+
         expert_params_mapping = [(
             "w13_weight" if weight_name in ["w1", "v1"] else "w2_weight",
             f"mlp.{weight_name}",
-        ) for weight_name in ["w1", "v1", "w2"]]                
+        ) for weight_name in ["w1", "v1", "w2"]]
         params_dict = dict(self.named_parameters(remove_duplicate=False))
         for name, loaded_weight in weights:
             for param_name, weight_name in expert_params_mapping:
