@@ -86,13 +86,13 @@ class DbrxExperts(FusedMoE):
         shard = slice(tp_rank * shard_size, (tp_rank + 1) * shard_size)
         # DBRX uses GLU for each experts.
         # GLU has 3 linear layers: w1, v1 and w2.
-        if weight_name.endswith("w1"):
+        if weight_name.endswith("w1."):
             loaded_weight = torch.reshape(
                 loaded_weight,
                 [-1, self.intermediate_size * self.tp_size, self.d_model],
             )
             param_data[:, 0:shard_size, :] = loaded_weight[:, shard, :]
-        if weight_name.endswith("v1"):
+        if weight_name.endswith("v1."):
             loaded_weight = torch.reshape(
                 loaded_weight,
                 [-1, self.intermediate_size * self.tp_size, self.d_model],
@@ -100,7 +100,7 @@ class DbrxExperts(FusedMoE):
             param_data[:,
                        shard_size:2 * shard_size, :] = loaded_weight[:,
                                                                      shard, :]
-        if weight_name.endswith("w2"):
+        if weight_name.endswith("w2."):
             loaded_weight = torch.reshape(
                 loaded_weight,
                 [-1, self.intermediate_size * self.tp_size, self.d_model],
@@ -392,11 +392,13 @@ class DbrxForCausalLM(nn.Module):
     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
 
         expert_params_mapping = [(
-            "w13_weight" if weight_name in ["w1", "v1"] else "w2_weight",
-            f"mlp.{weight_name}",
+            "w13_" if weight_name in ["w1", "v1"] else "w2_",
+            f"mlp.{weight_name}.",
         ) for weight_name in ["w1", "v1", "w2"]]
         params_dict = dict(self.named_parameters(remove_duplicate=False))
         for name, loaded_weight in weights:
+            if name.endswith(("w1", "v1", "w2")):
+                name = name + ".weight"
             for param_name, weight_name in expert_params_mapping:
                 if weight_name not in name:
                     continue
