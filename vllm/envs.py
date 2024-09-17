@@ -70,7 +70,7 @@ if TYPE_CHECKING:
     VLLM_SYNC_SERVER_ACCUM_REQUESTS: int = 1
     VLLM_SYNC_SERVER_ENGINE_STEPS_BETWEEN_POLLS: int = 1
     VLLM_MOE_PADDING: bool = False
-    VLLM_FP8_PADDING: bool = False
+    VLLM_FP8_PADDING: bool = True
 
 
 def get_default_cache_root():
