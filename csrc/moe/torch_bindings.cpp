@@ -9,6 +9,9 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, m) {
       "token_expert_indices, Tensor gating_output) -> ()");
   m.impl("topk_softmax", torch::kCUDA, &topk_softmax);
 
+  m.def("moe_sum(Tensor! input, Tensor output) -> ()");
+  m.impl("moe_sum", torch::kCUDA, &moe_sum);
+
 #ifndef USE_ROCM
   m.def(
       "marlin_gemm_moe(Tensor! a, Tensor! b_q_weights, Tensor! sorted_ids, "
