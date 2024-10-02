@@ -131,6 +131,7 @@ class PagedAttention:
         #TODO add logic to do this correctly
         use_triton = True
         if use_triton:
+            '''
             triton_paged_attention_v1(
                 output,
                 query,
@@ -151,6 +152,43 @@ class PagedAttention:
                 blocksparse_vert_stride,
                 blocksparse_block_size,
                 blocksparse_head_sliding_step,
+            )
+            '''
+            tmp_output = torch.empty(
+                size=(num_seqs, num_heads, max_num_partitions, head_size),
+                dtype=output.dtype,
+                device=output.device,
+            )
+            exp_sums = torch.empty(
+                size=(num_seqs, num_heads, max_num_partitions),
+                dtype=torch.float32,
+                device=output.device,
+            )
+            max_logits = torch.empty_like(exp_sums)
+            triton_paged_attention_v2(
+                output,
+                exp_sums,
+                max_logits,
+                tmp_output,
+                query,
+                key_cache,
+                value_cache,
+                num_kv_heads,
+                scale,
+                block_tables,
+                seq_lens,
+                block_size,
+                max_seq_len,
+                alibi_slopes,
+                kv_cache_dtype,
+                k_scale,
+                v_scale,
+                tp_rank,
+                blocksparse_local_blocks,
+                blocksparse_vert_stride,
+                blocksparse_block_size,
+                blocksparse_head_sliding_step
+
             )
 
         else use_v1:
