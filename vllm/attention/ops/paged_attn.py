@@ -9,6 +9,7 @@ from vllm.utils import is_hip
 
 if HAS_TRITON:
     from vllm.attention.ops.prefix_prefill import context_attention_fwd
+    from vllm.attention.ops.decode import triton_paged_attention_v1
 
 # Should be the same as PARTITION_SIZE in `paged_attention_v2_launcher`.
 _PARTITION_SIZE = 512 if not is_hip() else 1024
@@ -126,8 +127,33 @@ class PagedAttention:
         # For context len > 8192, use V2 kernel to avoid shared memory shortage.
         use_v1 = (max_seq_len <= 8192
                   and (max_num_partitions == 1 or num_seqs * num_heads > 512))
+        
+        #TODO add logic to do this correctly
+        use_triton = True
+        if use_triton:
+            triton_paged_attention_v1(
+                output,
+                query,
+                key_cache,
+                value_cache,
+                num_kv_heads,
+                scale,
+                block_tables,
+                seq_lens,
+                block_size,
+                max_seq_len,
+                alibi_slopes,
+                kv_cache_dtype,
+                k_scale,
+                v_scale,
+                tp_rank,
+                blocksparse_local_blocks,
+                blocksparse_vert_stride,
+                blocksparse_block_size,
+                blocksparse_head_sliding_step,
+            )
 
-        if use_v1:
+        else use_v1:
             # Run PagedAttention V1.
             ops.paged_attention_v1(
                 output,
