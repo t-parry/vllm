@@ -6,7 +6,7 @@ name: Create Release
 on:
   push:
     tags:
-      - test_*
+      - v*
 
 # Needed to create release and upload assets
 permissions:
