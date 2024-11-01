@@ -18,7 +18,7 @@ jobs:
     name: Create Release
     runs-on: self-hosted
     container:
-      image: rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0    
+      image: rocm/vllm:rocm6.2_mi300_ubuntu20.04_py3.9_vllm_0.6.4    
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -45,7 +45,7 @@ jobs:
     name: Build Wheel
     runs-on: self-hosted
     container:
-      image: rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
+      image: rocm/vllm:rocm6.2_mi300_ubuntu20.04_py3.9_vllm_0.6.4
     needs: release
 
     strategy:
