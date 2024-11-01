@@ -760,8 +760,6 @@ class FlashInferImpl(AttentionImpl):
         attn_type: AttentionType = AttentionType.DECODER,
         fp8_out_scale: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        assert k_scale == 1.0 and v_scale == 1.0, (
-            "key/v_scale is not supported in FlashInfer.")
         if attn_type != AttentionType.DECODER:
             raise NotImplementedError("Encoder self-attention and "
                                       "encoder/decoder cross-attention "
@@ -875,7 +873,12 @@ def unified_flash_infer(
             assert prefill_meta is not None
             assert prefill_meta.prefill_wrapper is not None
             prefill_output = prefill_meta.prefill_wrapper.forward(
-                query, kv_cache, logits_soft_cap=logits_soft_cap, causal=True)
+                query,
+                kv_cache,
+                logits_soft_cap=logits_soft_cap,
+                causal=True,
+                k_scale=k_scale,
+                v_scale=v_scale)
     if decode_meta := attn_metadata.decode_metadata:
         assert attn_metadata.decode_metadata is not None
         assert attn_metadata.decode_metadata.decode_wrapper is not None
