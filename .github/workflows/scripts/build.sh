@@ -12,5 +12,7 @@ export MAX_JOBS=1
 # Make sure release wheels are built for the following architectures
 export PYTORCH_ROCM_ARCH="gfx90a;gfx942"
 
+apt-get purge -y sccache; python3 -m pip uninstall -y sccache; rm -f $(which sccache)
+
 # Build
 $python_executable setup.py bdist_wheel --dist-dir=dist
