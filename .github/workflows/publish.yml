@@ -16,7 +16,7 @@ jobs:
   release:
     # Retrieve tag and create release
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container:
       image: rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0    
     outputs:
@@ -43,31 +43,26 @@ jobs:
 
   wheel:
     name: Build Wheel
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     container:
       image: rocm/pytorch:rocm6.2_ubuntu20.04_py3.9_pytorch_release_2.3.0
     needs: release
 
     strategy:
       fail-fast: false
-      matrix:
-          os: ['ubuntu-20.04']
-          python-version: ['3.9']
-          pytorch-version: ['2.5.0']  # Must be the most recent version that meets requirements-cuda.txt.
 
     steps:
       - name: Checkout
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
 
       - name: Set up Linux Env
-        if: ${{ runner.os == 'Linux' }}
         run: |
           bash -x .github/workflows/scripts/env.sh
 
       - name: Set up Python
         uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
-            python-version: ${{ matrix.python-version }}
+            python-version: 3.9
 
       - name: Build wheel
         shell: bash
