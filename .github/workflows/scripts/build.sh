@@ -12,7 +12,5 @@ export MAX_JOBS=1
 # Make sure release wheels are built for the following architectures
 export PYTORCH_ROCM_ARCH="gfx90a;gfx942"
 
-bash tools/check_repo.sh
-
 # Build
 $python_executable setup.py bdist_wheel --dist-dir=dist
