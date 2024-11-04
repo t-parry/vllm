@@ -6,9 +6,10 @@ Use py_3.9 conda environment for development.
 
 
 TODO:  
-1. Export notebook code to script. - Olga
-2. Function for waiting time calculation, threshold for alert. - Olga
+1. Export notebook code to script. - Olga, done
+2. Function for waiting time calculation, threshold for alert. - Olga, done
 3. How to not process records that were already processed: store builds with all MAD tests already finished in csv, ignore those.
-4. Sending the alert function: email and/or teams. - Hissu
+4. Sending the alert function: email and/or teams. - Hissu, done
 5. Scheduled start of the script. - Hissu
 6. Agent health: for now implement from builds info.
+7. Add try-except if credentials file is not found or if login throws an error.
