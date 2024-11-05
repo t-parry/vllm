@@ -23,36 +23,38 @@ load_dotenv()
 BUILDKITE_API_TOKEN = os.getenv('BUILDKITE_API_TOKEN')
 ORGANIZATION_SLUG='vllm'
 PIPELINE_SLUG = 'ci-aws'
-TODAY = datetime.utcnow().strftime('%Y-%m-%dT00:00:00Z') # it is UTC, so -2 hours from Finnish local time
+TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
 WAITING_TIME_ALERT_THR = 14400 # 4 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
+RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai"]
 
-
-
-# Set the URL
-url = f"https://api.buildkite.com/v2/organizations/{ORGANIZATION_SLUG}/pipelines/{PIPELINE_SLUG}/builds"
-
-# Set the query parameters
 params = {
     'created_from': TODAY,
 }
 
-# Set the headers
-headers = {
-    'Authorization': f'Bearer {BUILDKITE_API_TOKEN}'
-}
+def fetch_data(params, token=BUILDKITE_API_TOKEN, org_slug=ORGANIZATION_SLUG, pipe_slug=PIPELINE_SLUG):
+    # Set the URL
+    url = f"https://api.buildkite.com/v2/organizations/{org_slug}/pipelines/{pipe_slug}/builds"
 
-# Make the GET request
-response = requests.get(url, headers=headers, params=params)
 
-# Check if the request was successful
-if response.status_code == 200:
-    # Parse the JSON response
-    data = response.json()
-    df = pd.json_normalize(data)
-else:
-    print(f"Request failed with status code {response.status_code}")
+    # Set the headers
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+    
+    # Make the GET request
+    response = requests.get(url, headers=headers, params=params)
 
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the JSON response
+        data = response.json()
+        return pd.json_normalize(data)
+    else:
+        print(f"Request failed with status code {response.status_code}")
+        return pd.DataFrame()
+
+df = fetch_data(params)
 
 useful_columns = ['id', 'web_url', 'url', 'number', 'state', 'cancel_reason', 'blocked', 'blocked_state', 'jobs']
 d = df[useful_columns]
@@ -108,7 +110,7 @@ def alert(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGEN
 alerts = alert(result_df_amd)
 
 
-def send_email(alerts, recipients):
+def send_email(alerts, recipients=RECIPIENTS):
     # Both email and smtplib are standard parts of python and therefore can be imported without pip install
     # Sends email using gmail's username and app password that are in credentials.txt
     # Emails don't seem to go through to AMD email addresses, hence the @silo.ai
@@ -129,11 +131,10 @@ def send_email(alerts, recipients):
     s.send_message(msg)
     s.quit()
 
-recipients = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai"]
 
 
 if alerts:
     print('sending email')
-    send_email(alerts, recipients)  
+    send_email(alerts)  
 else:
     print('No alerts this time')      
