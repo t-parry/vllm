@@ -13,3 +13,5 @@ TODO:
 5. Scheduled start of the script. - Hissu
 6. Agent health: for now implement from builds info.
 7. Add try-except if credentials file is not found or if login throws an error.
+8. Parametrize email for alerts, enable sending to multiple addresses.
+9. Run script as daemon so that if a server reboots, the script will be launched again at startup.

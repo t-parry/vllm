@@ -25,6 +25,8 @@ ORGANIZATION_SLUG='vllm'
 PIPELINE_SLUG = 'ci-aws'
 TODAY = datetime.utcnow().strftime('%Y-%m-%dT00:00:00Z') # it is UTC, so -2 hours from Finnish local time
 WAITING_TIME_ALERT_THR = 14400 # 4 hours
+AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
+
 
 
 # Set the URL
@@ -83,9 +85,9 @@ def calculate_wait_time(df):
 
 result_df_amd = calculate_wait_time(result_df_amd)
 
-def alert(df, wait_time_thr=WAITING_TIME_ALERT_THR):
+def alert(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGENT_FAILED_BUILDS_THR):
     alerts = []
-    for index, row in result_df_amd.iterrows():
+    for index, row in df.iterrows():
         if row['waited_seconds'] > wait_time_thr:
             alert_message = f"Job {row['name']} from build number {row['number']} waited for {row['waited_seconds']} seconds (more than {wait_time_thr} or {wait_time_thr/3600} hours). More info at {row['web_url_job']}"
             alerts.append(alert_message)
@@ -93,13 +95,20 @@ def alert(df, wait_time_thr=WAITING_TIME_ALERT_THR):
             alert_message = f"Job {row['name']} from build number {row['number']} failed. More info at {row['web_url_job']}"
             alerts.append(alert_message)
 
+    # alert for agent health:
+    failed_jobs_from_diff_builds = df[(df.state_job=='failed') & (df.soft_failed==False)].groupby(['agent.id', 'agent.name', 'agent.web_url'], as_index=False).agg(unique_builds=('id_build', 'nunique'))
+    unhealthy_agents = failed_jobs_from_diff_builds[failed_jobs_from_diff_builds.unique_builds>=agent_failed_builds_thr]
+    for index, row in unhealthy_agents.iterrows():
+        alert_message = f"Agent {row['agent.name']} has failed jobs from {row['unique_builds']} unique builds. More info at {row['agent.web_url']}"
+        alerts.append(alert_message)
+
 
     return alerts
 
 alerts = alert(result_df_amd)
 
 
-def send_email(alerts):
+def send_email(alerts, recipients):
     # Both email and smtplib are standard parts of python and therefore can be imported without pip install
     # Sends email using gmail's username and app password that are in credentials.txt
     # Emails don't seem to go through to AMD email addresses, hence the @silo.ai
@@ -112,7 +121,7 @@ def send_email(alerts):
     msg = MIMEMultipart()
     msg['Subject'] = "Test email"
     msg['From'] = credentials[0]
-    msg['To'] = "hissu.hyvarinen@silo.ai"
+    msg['To'] = ", ".join(recipients)
 
     alerts_str = '\n'.join(alerts)
     msg.attach(MIMEText(alerts_str, 'plain'))
@@ -120,8 +129,11 @@ def send_email(alerts):
     s.send_message(msg)
     s.quit()
 
+recipients = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai"]
+
+
 if alerts:
     print('sending email')
-    send_email(alerts)  
+    send_email(alerts, recipients)  
 else:
     print('No alerts this time')      
