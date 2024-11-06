@@ -12,7 +12,9 @@ TODO:
 4. ~~Sending the alert function: email and/or teams. - Hissu, done~~
 5. Scheduled start of the script, every 15 mins. - Hissu
 6. ~~Agent health: for now implement from builds info. - Olga, done~~
-7. Add try-except if credentials file is not found or if login throws an error. - Hissu
-8. ~~Parametrize email for alerts, enable sending to multiple addresses. - Olga, done~~
-9. Run script as daemon so that if a server reboots, the script will be launched again at startup. - Hissu
-10. Job waiting time when it is not yet started, search for job state == waiting. - Olga
+7. ~~Add try-except for SMTP authentication fails. - Hissu~~
+8. ~~Pass gmail user and password as env variables instead of txt file -Hissu~~
+9. ~~Make a Docker container for the monitor script -Hissu~~
+10. ~~Parametrize email for alerts, enable sending to multiple addresses. - Olga, done~~
+11. Run script as daemon so that if a server reboots, the script will be launched again at startup. - Hissu
+12. Job waiting time when it is not yet started, search for job state == waiting. - Olga
