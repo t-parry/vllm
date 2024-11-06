@@ -8,5 +8,5 @@ RUN pip install --no-cache-dir -r requirements-bkmonitor.txt
 
 COPY . .
 
-CMD ["/bin/bash"]
-#CMD ["python3 ./monitor.py"]
+#CMD ["/bin/bash"]
+CMD ["python3", "./monitor.py"]
