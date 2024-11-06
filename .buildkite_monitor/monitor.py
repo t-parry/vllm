@@ -21,12 +21,14 @@ pd.set_option("display.max_rows", None)
 load_dotenv()
 
 BUILDKITE_API_TOKEN = os.getenv('BUILDKITE_API_TOKEN')
+GMAIL_USERNAME = os.getenv('GMAIL_USERNAME')
+GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD')
 ORGANIZATION_SLUG='vllm'
 PIPELINE_SLUG = 'ci-aws'
 TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
 WAITING_TIME_ALERT_THR = 14400 # 4 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
-RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai"]
+RECIPIENTS = ["hissu.hyvarinen@silo.ai"]#, "olga.miroshnichenko@silo.ai"]
 
 params = {
     'created_from': TODAY,
@@ -111,18 +113,22 @@ alerts = alert(result_df_amd)
 
 
 def send_email(alerts, recipients=RECIPIENTS):
-    # Both email and smtplib are standard parts of python and therefore can be imported without pip install
     # Sends email using gmail's username and app password that are in credentials.txt
-    # Emails don't seem to go through to AMD email addresses, hence the @silo.ai
+    # in the format username:password
 
-    credentials = open('credentials.txt').read().split(':')
     s = smtplib.SMTP(host='smtp.gmail.com', port=587)
     s.starttls()
-    s.login(credentials[0], credentials[1])
+    try:
+        s.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+    except smtplib.SMTPAuthenticationError:
+        print("SMTP authentication failed")
+        # What do we want to do with the alert data if this happens?
+        raise SystemExit
+
 
     msg = MIMEMultipart()
     msg['Subject'] = "Test email"
-    msg['From'] = credentials[0]
+    msg['From'] = GMAIL_USERNAME
     msg['To'] = ", ".join(recipients)
 
     alerts_str = '\n'.join(alerts)
