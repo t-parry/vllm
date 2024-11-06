@@ -2,6 +2,8 @@ Running the script requires BUILDKITE_API_TOKEN, request it from [here](https://
 Create .env file in .buildkite_monitor directory and paste there:
 > export BUILDKITE_API_TOKEN='YOUR_TOKEN' 
 
+Running the script also requires having GMAIL_USERNAME and GMAIL_PASSWORD in .env.
+
 Use py_3.9 conda environment for development.
 
 
