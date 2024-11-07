@@ -56,7 +56,7 @@ typedef __hip_bfloat16 __nv_bfloat16;
 
 template <typename T, typename CACHE_T, int BLOCK_SIZE,
           vllm::Fp8KVCacheDataType KV_DTYPE, bool IS_BLOCK_SPARSE,
-          int NUM_THREADS, int PARTITION_SIZE = 512>
+          int NUM_THREADS, int PARTITION_SIZE>
 void paged_attention_v2_launcher(
     torch::Tensor& out, torch::Tensor& exp_sums, torch::Tensor& max_logits,
     torch::Tensor& tmp_out, torch::Tensor& query, torch::Tensor& key_cache,
@@ -145,7 +145,7 @@ void paged_attention_v2_launcher(
 #define CALL_V2_LAUNCHER(T, CACHE_T, BLOCK_SIZE, KV_DTYPE, IS_BLOCK_SPARSE,   \
                          NUM_THREADS, PARTITION_SIZE)                         \
   paged_attention_v2_launcher<T, CACHE_T, BLOCK_SIZE, KV_DTYPE,               \
-                              IS_BLOCK_SPARSE>(                               \
+                              IS_BLOCK_SPARSE, NUM_THREADS, PARTITION_SIZE>(  \
       out, exp_sums, max_logits, tmp_out, query, key_cache, value_cache,      \
       num_kv_heads, scale, block_tables, seq_lens, max_seq_len, alibi_slopes, \
       k_scale, v_scale, tp_rank, blocksparse_local_blocks,                    \
