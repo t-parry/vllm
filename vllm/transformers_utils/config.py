@@ -19,6 +19,7 @@ from vllm.logger import init_logger
 # yapf: disable
 from vllm.transformers_utils.configs import (ChatGLMConfig, DbrxConfig,
                                              EAGLEConfig, ExaoneConfig,
+                                             H2OVLChatConfig,
                                              Grok1Config, InternVLChatConfig,
                                              JAISConfig, MedusaConfig,
                                              MllamaConfig, MLPSpeculatorConfig,
@@ -52,6 +53,7 @@ _CONFIG_REGISTRY: Dict[str, Type[PretrainedConfig]] = {
     "medusa": MedusaConfig,
     "eagle": EAGLEConfig,
     "exaone": ExaoneConfig,
+    "h2ovl_chat": H2OVLChatConfig,
     "internvl_chat": InternVLChatConfig,
     "nemotron": NemotronConfig,
     "NVLM_D": NVLM_D_Config,
