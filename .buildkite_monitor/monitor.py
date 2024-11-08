@@ -26,7 +26,7 @@ PIPELINE_SLUG = 'ci-aws'
 TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
 WAITING_TIME_ALERT_THR = 14400 # 4 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
-RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai"]
+RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai", 'alexei_v_ivanov@ieee.org']
 
 params = {
     'created_from': TODAY,
@@ -79,7 +79,7 @@ def calculate_wait_time(df):
     # Calculate the difference in seconds
     df['waited_seconds'] = df.apply(
         lambda row: (row['started_at'] - row['runnable_at']).total_seconds() if pd.notna(row['started_at']) and pd.notna(row['runnable_at']) \
-              else (now_utc - row['runnable_at']).total_seconds() if pd.notna(row['started_at']) and pd.isna(row['runnable_at']) \
+              else (now_utc - row['runnable_at']).total_seconds() if pd.isna(row['started_at']) and pd.notna(row['runnable_at']) \
                 else None,
         axis=1
     )
@@ -89,18 +89,17 @@ result_df_amd = calculate_wait_time(result_df_amd)
 
 def alert(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGENT_FAILED_BUILDS_THR):
     alerts = []
+    # waiting time alert:
     for index, row in df.iterrows():
         if row['waited_seconds'] > wait_time_thr:
-            alert_message = f"Job {row['name']} from build number {row['number']} waited for {row['waited_seconds']} seconds (more than {wait_time_thr} or {wait_time_thr/3600} hours). More info at {row['web_url_job']}"
-            alerts.append(alert_message)
-        if (row['state_job'] == 'failed') & (row['soft_failed'] == False): 
-            alert_message = f"Job {row['name']} from build number {row['number']} failed. More info at {row['web_url_job']}"
+            alert_message = f"Job {row['name']} from build number {row['number']} waited for {row['waited_seconds']} seconds (more than {wait_time_thr} seconds or {wait_time_thr/3600} hours). More info at {row['web_url_job']}, agent {row['agent.name']}"
             alerts.append(alert_message)
 
     # alert for agent health:
     failed_jobs_from_diff_builds = df[(df.state_job=='failed') & (df.soft_failed==False)].groupby(['agent.id', 'agent.name', 'agent.web_url'], as_index=False).agg(unique_builds=('id_build', 'nunique'))
     unhealthy_agents = failed_jobs_from_diff_builds[failed_jobs_from_diff_builds.unique_builds>=agent_failed_builds_thr]
     for index, row in unhealthy_agents.iterrows():
+        alerts.append('Agent alerts:')
         alert_message = f"Agent {row['agent.name']} has failed jobs from {row['unique_builds']} unique builds. More info at {row['agent.web_url']}"
         alerts.append(alert_message)
 
