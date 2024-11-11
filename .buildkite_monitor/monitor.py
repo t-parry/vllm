@@ -28,7 +28,7 @@ GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD')
 ORGANIZATION_SLUG='vllm'
 PIPELINE_SLUG = 'ci-aws'
 TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
-WAITING_TIME_ALERT_THR = 14400 # 4 hours
+WAITING_TIME_ALERT_THR = 10800 # 3 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
 RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai", 'alexei_v_ivanov@ieee.org']
 PATH_TO_LOGS = '/mnt/home/buildkite_logs/'
