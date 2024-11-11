@@ -10,8 +10,16 @@ One option for a scheduled run would be to use cron:\
 On some machine, edit your crontab file:\
 `crontab -e`\
 Using nano/vim/emacs to add an entry for running the container, e.g.\
-`*/15 * * * * docker run --network=host --rm --name=hissu-bkmonitor hissu-bkmonitor` # Runs the hissu-bkmonitor container every 15 minutes\
-(I'm not setting this up yet, as we don't have a check for previously identified issues, so atm this would spam us about the same incidents repeatedly) 
+`*/15 * * * * docker run --network=host --rm -v $HOME/:/mnt/home/ --name=hissu-bkmonitor hissu-bkmonitor` # Runs the hissu-bkmonitor container every 15 minutes    
+
+To cancel or change the cron job:  
+
+`crontab -e`\
+Comment out or change the line with the job, then  
+`service cron reload`
+
+
+As a temporary solution we set up saving alerts data in $HOME directory, this directory should be mounted when container is launched (with -v flag). `monitor.py` script has PATH_TO_LOGS set to '/mnt/home/buildkite_logs/', where the logs are saved.
 
 TODO:  
 1. ~~Export notebook code to script. - Olga, done~~
