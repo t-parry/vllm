@@ -136,7 +136,7 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
                 if value_exists_in_column:
                     continue
             new_row = pd.DataFrame.from_records({'time_utc': now, 'alert_type': 'job', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
-                       'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.NaN, 'failed_builds': [[]]}) 
+                       'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.nan, 'failed_builds': [[]]}) 
             alert_message = f"Job {row['name']} from build number {row['number']} has been waiting for {row['waited_seconds']} seconds (more than {wait_time_thr} seconds or {wait_time_thr/3600} hours). More info at {row['web_url_job']}"
             alerts.append(alert_message)
             alerts_df = pd.concat([alerts_df, new_row], ignore_index=True)
@@ -155,8 +155,8 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
                     # Check if there is any intersection between row['failed_builds'] and sent_failed_builds
                     if any(failed_build in sent_failed_builds for failed_build in row['failed_builds']):
                         continue
-        new_row = pd.DataFrame({'time_utc': now, 'alert_type': 'agent', 'id_job': np.NaN, 'state_job': np.NaN, 'name': np.NaN, 'number': np.NaN, 'id_build': np.NaN, 'waited_seconds': np.NaN,  
-                        'web_url_job': np.NaN, 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': row['nunique_failed_builds'], 'failed_builds': [row['failed_builds'].tolist()]}, index=[0])
+        new_row = pd.DataFrame({'time_utc': now, 'alert_type': 'agent', 'id_job': np.nan, 'state_job': np.nan, 'name': np.nan, 'number': np.nan, 'id_build': np.nan, 'waited_seconds': np.nan,  
+                        'web_url_job': np.nan, 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': row['nunique_failed_builds'], 'failed_builds': [row['failed_builds'].tolist()]}, index=[0])
         
         alert_message = f"Agent {row['agent_name']} has failed jobs from {row['nunique_failed_builds']} unique builds. More info at {row['agent_web_url']}"
         alerts.append(alert_message)
