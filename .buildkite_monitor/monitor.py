@@ -30,7 +30,7 @@ PIPELINE_SLUG = 'ci-aws'
 TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
 WAITING_TIME_ALERT_THR = 10800 # 3 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
-RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai", 'alexei_v_ivanov@ieee.org']
+RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai", 'hissu.hyvarinen@amd.com', 'olga.miroshnichenko@amd.com', 'alexei.ivanov@amd.com>']
 PATH_TO_LOGS = '/mnt/home/buildkite_logs/'
 
 params = {
