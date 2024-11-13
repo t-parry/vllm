@@ -64,7 +64,7 @@ df = fetch_data(params)
 
 def write_log(df, prefix, path=PATH_TO_LOGS):
     '''Writing logs for testing purposes'''
-    df.to_csv(path + prefix + datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat() + '.csv')
+    df.to_csv(path + prefix + datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat() + '.csv', index=False)
     return None
 
 
@@ -125,13 +125,13 @@ except:
 
 def log_alerts(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGENT_FAILED_BUILDS_THR):
     alerts = []
-    now = datetime.now().isoformat()
-    alerts_df = pd.DataFrame(columns=['time_utc','alert_type', 'id_job', 'state_job', 'name', 'number', 'id_build', 'waited_seconds', 'web_url_job', 'agent_id', 'agent_name', 'agent_web_url', 'nunique_failed_builds', 'failed_builds'] )
+    now = datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat()
+    alerts_df = pd.DataFrame(columns=['time','alert_type', 'id_job', 'state_job', 'name', 'number', 'id_build', 'waited_seconds', 'web_url_job', 'agent_id', 'agent_name', 'agent_web_url', 'nunique_failed_builds', 'failed_builds'] )
     
     # job waiting time alert:
     for _, row in df.iterrows():
         if row['waited_seconds'] > wait_time_thr and row['state_job']!='canceled' and pd.isna(row['started_at']): 
-            new_row = pd.DataFrame.from_records({'time_utc': now, 'alert_type': 'job', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
+            new_row = pd.DataFrame.from_records({'time': now, 'alert_type': 'job', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
                        'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.nan, 'failed_builds': [[]]}) 
             alert_message = f"Job {row['name']} from build number {row['number']} has been waiting for {row['waited_seconds']} seconds (more than {wait_time_thr} seconds or {wait_time_thr/3600} hours). More info at {row['web_url_job']}"
             alerts.append(alert_message)
@@ -143,7 +143,7 @@ def log_alerts(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr
     
     unhealthy_agents = failed_jobs_from_diff_builds[failed_jobs_from_diff_builds.nunique_failed_builds>=agent_failed_builds_thr]
     for _, row in unhealthy_agents.iterrows():
-        new_row = pd.DataFrame({'time_utc': now, 'alert_type': 'agent', 'id_job': np.nan, 'state_job': np.nan, 'name': np.nan, 'number': np.nan, 'id_build': np.nan, 'waited_seconds': np.nan,  
+        new_row = pd.DataFrame({'time': now, 'alert_type': 'agent', 'id_job': np.nan, 'state_job': np.nan, 'name': np.nan, 'number': np.nan, 'id_build': np.nan, 'waited_seconds': np.nan,  
                         'web_url_job': np.nan, 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': row['nunique_failed_builds'], 'failed_builds': [row['failed_builds'].tolist()]}, index=[0])
         
         alert_message = f"Agent {row['agent_name']} has failed jobs from {row['nunique_failed_builds']} unique builds. More info at {row['agent_web_url']}"
@@ -152,12 +152,12 @@ def log_alerts(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr
 
     write_log(alerts_df, 'alerts_')
 
-    return None 
+    return alerts_df 
 
 def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGENT_FAILED_BUILDS_THR):
     alerts = []
-    now = datetime.now().isoformat()
-    alerts_df = pd.DataFrame(columns=['time_utc','alert_type', 'id_job', 'state_job', 'name', 'number', 'id_build', 'waited_seconds', 'web_url_job', 'agent_id', 'agent_name', 'agent_web_url', 'nunique_failed_builds', 'failed_builds'] )
+    now = datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat()
+    alerts_df = pd.DataFrame(columns=['time','alert_type', 'id_job', 'state_job', 'name', 'number', 'id_build', 'waited_seconds', 'web_url_job', 'agent_id', 'agent_name', 'agent_web_url', 'nunique_failed_builds', 'failed_builds'] )
     
     # job waiting time alert:
     for _, row in df.iterrows():
@@ -166,7 +166,7 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
                 value_exists_in_column = alerts_sent['id_job'].isin([row['id_job']]).any()
                 if value_exists_in_column:
                     continue
-            new_row = pd.DataFrame.from_records({'time_utc': now, 'alert_type': 'job', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
+            new_row = pd.DataFrame.from_records({'time': now, 'alert_type': 'job', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
                        'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.nan, 'failed_builds': [[]]}) 
             alert_message = f"Job {row['name']} from build number {row['number']} has been waiting for {row['waited_seconds']} seconds (more than {wait_time_thr} seconds or {wait_time_thr/3600} hours). More info at {row['web_url_job']}"
             alerts.append(alert_message)
@@ -186,7 +186,7 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
                     # Check if there is any intersection between row['failed_builds'] and sent_failed_builds
                     if any(failed_build in sent_failed_builds for failed_build in row['failed_builds']):
                         continue
-        new_row = pd.DataFrame({'time_utc': now, 'alert_type': 'agent', 'id_job': np.nan, 'state_job': np.nan, 'name': np.nan, 'number': np.nan, 'id_build': np.nan, 'waited_seconds': np.nan,  
+        new_row = pd.DataFrame({'time': now, 'alert_type': 'agent', 'id_job': np.nan, 'state_job': np.nan, 'name': np.nan, 'number': np.nan, 'id_build': np.nan, 'waited_seconds': np.nan,  
                         'web_url_job': np.nan, 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': row['nunique_failed_builds'], 'failed_builds': [row['failed_builds'].tolist()]}, index=[0])
         
         alert_message = f"Agent {row['agent_name']} has failed jobs from {row['nunique_failed_builds']} unique builds. More info at {row['agent_web_url']}"
@@ -197,10 +197,10 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
 
 alerts, alerts_df = alert(result_df_amd)
 
-log_alerts(result_df_amd)
+log = log_alerts(result_df_amd)
                    
 
-def send_email(alerts, alerts_df, recipients=RECIPIENTS):
+def send_email(alerts, all_current_alerts, recipients=RECIPIENTS):
     # Sends email using gmail's username and app password that are in credentials.txt
     # in the format username:password
     s = smtplib.SMTP(host='smtp.gmail.com', port=587)
@@ -226,7 +226,7 @@ def send_email(alerts, alerts_df, recipients=RECIPIENTS):
 
     try:
         s.send_message(msg)
-        alerts_df.to_csv(PATH_TO_LOGS + 'alerts_sent.csv')
+        alerts_df.to_csv(PATH_TO_LOGS + 'alerts_sent.csv', index=False)
     except Exception as e:
         print("Email send failed")
         file_name = PATH_TO_LOGS + 'alerts_' + datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat() + '_email_send_failed.txt'
@@ -240,6 +240,6 @@ def send_email(alerts, alerts_df, recipients=RECIPIENTS):
 
 if alerts:
     print('sending email')
-    send_email(alerts, alerts_df)  
+    send_email(alerts, log)  
 else:
     print('No alerts this time')   
