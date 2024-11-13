@@ -203,7 +203,6 @@ log_alerts(result_df_amd)
 def send_email(alerts, alerts_df, recipients=RECIPIENTS):
     # Sends email using gmail's username and app password that are in credentials.txt
     # in the format username:password
-    now = datetime.now().isoformat()
     s = smtplib.SMTP(host='smtp.gmail.com', port=587)
 
     s.starttls()
@@ -227,7 +226,6 @@ def send_email(alerts, alerts_df, recipients=RECIPIENTS):
 
     try:
         s.send_message(msg)
-        alerts_df.to_csv('alerts_sent.csv')
         alerts_df.to_csv(PATH_TO_LOGS + 'alerts_sent.csv')
     except Exception as e:
         print("Email send failed")
