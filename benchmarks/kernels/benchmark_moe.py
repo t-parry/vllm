@@ -12,9 +12,10 @@ from transformers import AutoConfig
 
 from vllm.model_executor.layers.fused_moe.fused_moe import *
 from vllm.platforms import current_platform
-from vllm.utils import FlexibleArgumentParser, is_hip
+from vllm.utils import FlexibleArgumentParser, is_navi
 
-FP8_DTYPE = torch.float8_e4m3fnuz if is_hip() else torch.float8_e4m3fn
+FP8_DTYPE = torch.float8_e4m3fnuz if current_platform.is_rocm(
+) and not is_navi() else torch.float8_e4m3fn
 
 
 class BenchmarkConfig(TypedDict):
@@ -178,7 +179,7 @@ def get_rocm_tuning_space(use_fp16):
 def get_configs_compute_bound(use_fp16) -> List[Dict[str, int]]:
     configs: List[BenchmarkConfig] = []
 
-    if is_hip():
+    if current_platform.is_rocm():
         param_ranges = get_rocm_tuning_space(use_fp16)
     else:
         # Reduced search space for faster tuning.
@@ -368,7 +369,7 @@ class BenchmarkWorker:
     ) -> Dict[str, int]:
         best_config = None
         best_time = float("inf")
-        if is_hip():
+        if current_platform.is_rocm():
             is_fp16 = not (use_fp8_w8a8 or use_int8_w8a16)
             search_space = prune_search_space(num_tokens,
                                               shard_intermediate_size,
@@ -468,7 +469,7 @@ def main(args: argparse.Namespace):
         shard_intermediate_size = 2 * intermediate_size // args.tp_size
 
     hidden_size = config.hidden_size
-    dtype = torch.float16 if is_hip() else config.torch_dtype
+    dtype = torch.float16 if current_platform.is_rocm() else config.torch_dtype
     use_fp8_w8a8 = args.dtype == "fp8_w8a8"
     use_int8_w8a16 = args.dtype == "int8_w8a16"
 
