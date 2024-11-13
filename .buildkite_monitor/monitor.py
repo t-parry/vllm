@@ -27,14 +27,14 @@ GMAIL_USERNAME = os.getenv('GMAIL_USERNAME')
 GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD')
 ORGANIZATION_SLUG='vllm'
 PIPELINE_SLUG = 'ci-aws'
-TODAY = (datetime.utcnow() - pd.Timedelta(days=1)).strftime('%Y-%m-%dT22:00:00Z') # it is UTC, so -2 hours from Finnish local time
+LAST_24_HOURS = (datetime.utcnow() - pd.Timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M')
 WAITING_TIME_ALERT_THR = 10800 # 3 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
-RECIPIENTS = ["hissu.hyvarinen@silo.ai", "olga.miroshnichenko@silo.ai", 'hissu.hyvarinen@amd.com', 'olga.miroshnichenko@amd.com', 'alexei.ivanov@amd.com>']
+RECIPIENTS = ['hissu.hyvarinen@amd.com', 'olga.miroshnichenko@amd.com', 'alexei.ivanov@amd.com']
 PATH_TO_LOGS = '/mnt/home/buildkite_logs/'
 
 params = {
-    'created_from': TODAY,
+    'created_from': LAST_24_HOURS,
     'per_page': 100,
 }
 
@@ -198,21 +198,24 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
 alerts, alerts_df = alert(result_df_amd)
 
 log_alerts(result_df_amd)
-
+                   
 
 def send_email(alerts, alerts_df, recipients=RECIPIENTS):
     # Sends email using gmail's username and app password that are in credentials.txt
     # in the format username:password
-
+    now = datetime.now().isoformat()
     s = smtplib.SMTP(host='smtp.gmail.com', port=587)
+
     s.starttls()
     try:
         s.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+
     except smtplib.SMTPAuthenticationError:
         print("SMTP authentication failed")
-        # What do we want to do with the alert data if this happens?
+        file_name = PATH_TO_LOGS + 'alerts_' + datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat() + '_smtp_authentication_failed.txt'
+        with open(file_name, 'w') as file:
+            file.write(f"SMTP authentication failed with GMAIL_USERNAME: {GMAIL_USERNAME}")
         raise SystemExit
-
 
     msg = MIMEMultipart()
     msg['Subject'] = "Buildkite monitor alerts"
@@ -222,14 +225,23 @@ def send_email(alerts, alerts_df, recipients=RECIPIENTS):
     alerts_str = '\n'.join(alerts)
     msg.attach(MIMEText(alerts_str, 'plain'))
 
-    s.send_message(msg)
-    s.quit()
-    alerts_df.to_csv(PATH_TO_LOGS + 'alerts_sent.csv')
+    try:
+        s.send_message(msg)
+        alerts_df.to_csv('alerts_sent.csv')
+        alerts_df.to_csv(PATH_TO_LOGS + 'alerts_sent.csv')
+    except Exception as e:
+        print("Email send failed")
+        file_name = PATH_TO_LOGS + 'alerts_' + datetime.now(zoneinfo.ZoneInfo('Europe/Helsinki')).isoformat() + '_email_send_failed.txt'
+        with open(file_name, 'w') as file:
+            file.write(f"Failed to send email: {e}")
+    finally:
+        s.quit()
 
+   
 
 
 if alerts:
     print('sending email')
     send_email(alerts, alerts_df)  
 else:
-    print('No alerts this time')      
+    print('No alerts this time')   
