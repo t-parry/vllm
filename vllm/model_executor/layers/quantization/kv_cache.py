@@ -63,8 +63,8 @@ class BaseKVCacheMethod(QuantizeMethodBase):
                                  "for fp8 KV cache")
 
             # These are used in the final Attention.forward()
-            layer._k_scale = k_scale
-            layer._v_scale = v_scale
+            layer._k_scale.copy_(k_scale)
+            layer._v_scale.copy_(v_scale)
             if (layer._k_scale == 1.0 and layer._v_scale == 1.0
                     and "e5m2" not in layer.kv_cache_dtype):
                 print_warning_once(

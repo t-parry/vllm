@@ -394,7 +394,7 @@ TORCH_LIBRARY_EXPAND(CONCAT(TORCH_EXTENSION_NAME, _cache_ops), cache_ops) {
       "                  Tensor! key_cache, Tensor! value_cache,"
       "                  Tensor slot_mapping,"
       "                  str kv_cache_dtype,"
-      "                  float k_scale, float v_scale) -> ()");
+      "                  Tensor k_scale, Tensor v_scale) -> ()");
   cache_ops.impl("reshape_and_cache", torch::kCUDA, &reshape_and_cache);
 
   // Reshape the key and value tensors and cache them.
@@ -404,7 +404,7 @@ TORCH_LIBRARY_EXPAND(CONCAT(TORCH_EXTENSION_NAME, _cache_ops), cache_ops) {
       "                        Tensor! value_cache,"
       "                        Tensor slot_mapping,"
       "                        str kv_cache_dtype,"
-      "                        float k_scale, float v_scale) -> ()");
+      "                        Tensor k_scale, Tensor v_scale) -> ()");
   cache_ops.impl("reshape_and_cache_flash", torch::kCUDA,
                  &reshape_and_cache_flash);
 

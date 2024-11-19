@@ -57,8 +57,8 @@ class Attention(nn.Module):
         # expect the pre-quantized k/v_scale to be loaded along
         # with the model weights.
         self.kv_cache_dtype = kv_cache_dtype
-        self._k_scale = 1.0
-        self._v_scale = 1.0
+        self._k_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32, requires_grad=False)
+        self._v_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32, requires_grad=False)
         quant_method = quant_config.get_quant_method(
             self, prefix=prefix) if quant_config else None
         if quant_method is not None:
