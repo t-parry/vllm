@@ -523,8 +523,8 @@ class ROCmFlashAttentionImpl(AttentionImpl):
         value: torch.Tensor,
         kv_cache: torch.Tensor,
         attn_metadata: ROCmFlashAttentionMetadata,
-        k_scale: torch.Tensor = torch.tensor(1.0),
-        v_scale: torch.Tensor = torch.tensor(1.0),
+        k_scale: torch.Tensor,
+        v_scale: torch.Tensor,
         attn_type: AttentionType = AttentionType.DECODER,
         fp8_out_scale: torch.Tensor = None,
     ) -> torch.Tensor:

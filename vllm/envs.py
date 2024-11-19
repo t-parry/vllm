@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     VLLM_USE_SDPA_ATTENTION: bool = False
     VLLM_USE_TRITON_FLASH_ATTN: bool = True
     VLLM_USE_ROCM_SKINNY_GEMM: bool = True
-    VLLM_USE_ROCM_CUSTOM_PAGED_ATTN: bool = True
-    VLLM_USE_ROCM_CUSTOM_PAGED_ATTN_FP8_OUT: bool = True
+    VLLM_USE_ROCM_CUSTOM_PAGED_ATTN: bool = False
+    VLLM_USE_ROCM_CUSTOM_PAGED_ATTN_FP8_OUT: bool = False
     RANK: int = 0
     LOCAL_RANK: int = 0
     CUDA_VISIBLE_DEVICES: Optional[str] = None

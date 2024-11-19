@@ -185,8 +185,8 @@ def paged_attention_rocm(
     max_seq_len: int,
     alibi_slopes: Optional[torch.Tensor],
     kv_cache_dtype: str,
-    k_scale: float,
-    v_scale: float,
+    k_scale: torch.Tensor,
+    v_scale: torch.Tensor,
     fp8_out_scale: Optional[torch.Tensor],
     partition_size: int,
 ) -> None:
