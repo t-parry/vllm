@@ -218,12 +218,6 @@ class ROCmFlashAttentionMetadata(AttentionMetadata, PagedAttentionMetadata):
             max_encoder_seq_len=self.max_encoder_seq_len,
             cross_slot_mapping=self.cross_slot_mapping,
             cross_block_tables=self.cross_block_tables)
-        # Batch may be composed of prefill|decodes, adjust query start indices
-        # to refer to the start of decodes when the two are split apart.
-        # E.g. in tokens:[3 prefills|6 decodes], query_start_loc=[3,9] => [0,6].
-        if self._cached_decode_metadata.query_start_loc is not None:
-            qs = self._cached_decode_metadata.query_start_loc
-            self._cached_decode_metadata.query_start_loc = qs - qs[0]
         return self._cached_decode_metadata
 
     def advance_step(self,
@@ -459,10 +453,12 @@ class ROCmFlashAttentionImpl(AttentionImpl):
         if blocksparse_params is not None:
             raise ValueError(
                 "ROCmFlashAttention does not support blocksparse attention.")
-        if logits_soft_cap is not None:
-            raise ValueError(
-                "ROCmFlashAttention does not support attention logits soft "
-                "capping.")
+
+        if logits_soft_cap is None:
+            # In flash-attn, setting logits_soft_cap as 0 means no soft cap.
+            logits_soft_cap = 0
+        self.logits_soft_cap = logits_soft_cap
+
         self.num_heads = num_heads
         self.head_size = head_size
         self.scale = float(scale)
@@ -487,6 +483,14 @@ class ROCmFlashAttentionImpl(AttentionImpl):
         # NOTE: Allow for switching between Triton and CK. Defaulting to triton.
         self.use_triton_flash_attn = envs.VLLM_USE_TRITON_FLASH_ATTN
         if self.use_triton_flash_attn:
+            if logits_soft_cap is not None:
+                raise ValueError(
+                        "ROCm Triton FlashAttention does not support attention"
+                        "logits soft capping."
+                        " please try using the ROCm CK "
+                        "FA backend instead by setting the env var "
+                        "`VLLM_USE_TRITON_FLASH_ATTN=0`")
+
             from vllm.attention.ops.triton_flash_attention import (  # noqa: F401
                 triton_attention)
             self.attn_func = triton_attention
@@ -511,6 +515,11 @@ class ROCmFlashAttentionImpl(AttentionImpl):
                     self.use_naive_attn = True
 
             if self.use_naive_attn:
+                if logits_soft_cap is not None:
+                    raise ValueError(
+                            "ROCm Naive FlashAttention does not support attention"
+                            "logits soft capping.")
+
                 self.attn_func = _sdpa_attention
                 logger.debug("Using naive (SDPA) attention in ROCmBackend")
 
@@ -716,6 +725,7 @@ class ROCmFlashAttentionImpl(AttentionImpl):
                         causal=True,
                         window_size=self.sliding_window,
                         alibi_slopes=self.alibi_slopes,
+                        softcap=self.logits_soft_cap,
                     )
 
                 # common code for prefill
