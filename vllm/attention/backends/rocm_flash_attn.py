@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 import torch
+from flash_attn import flash_attn_varlen_func  # noqa: F401
 
 import vllm.envs as envs
 from vllm import _custom_ops as ops
@@ -485,11 +486,11 @@ class ROCmFlashAttentionImpl(AttentionImpl):
         if self.use_triton_flash_attn:
             if logits_soft_cap is not None:
                 raise ValueError(
-                        "ROCm Triton FlashAttention does not support attention"
-                        "logits soft capping."
-                        " please try using the ROCm CK "
-                        "FA backend instead by setting the env var "
-                        "`VLLM_USE_TRITON_FLASH_ATTN=0`")
+                    "ROCm Triton FlashAttention does not support attention"
+                    "logits soft capping."
+                    " please try using the ROCm CK "
+                    "FA backend instead by setting the env var "
+                    "`VLLM_USE_TRITON_FLASH_ATTN=0`")
 
             from vllm.attention.ops.triton_flash_attention import (  # noqa: F401
                 triton_attention)
@@ -507,18 +508,14 @@ class ROCmFlashAttentionImpl(AttentionImpl):
             if not current_platform.has_device_capability(90):
                 self.use_naive_attn = True
             else:
-                try:
-                    from flash_attn import flash_attn_varlen_func  # noqa: F401
-                    self.attn_func = flash_attn_varlen_func
-                    logger.debug("Using CK FA in ROCmBackend")
-                except ModuleNotFoundError:
-                    self.use_naive_attn = True
+                self.attn_func = flash_attn_varlen_func
+                logger.debug("Using CK FA in ROCmBackend")
 
             if self.use_naive_attn:
                 if logits_soft_cap is not None:
                     raise ValueError(
-                            "ROCm Naive FlashAttention does not support attention"
-                            "logits soft capping.")
+                        "ROCm Naive FlashAttention does not support"
+                        "attention logits soft capping.")
 
                 self.attn_func = _sdpa_attention
                 logger.debug("Using naive (SDPA) attention in ROCmBackend")
