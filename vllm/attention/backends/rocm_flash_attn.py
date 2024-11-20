@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 import torch
-from flash_attn import flash_attn_varlen_func  # noqa: F401
 
 import vllm.envs as envs
 from vllm import _custom_ops as ops
@@ -508,8 +507,12 @@ class ROCmFlashAttentionImpl(AttentionImpl):
             if not current_platform.has_device_capability(90):
                 self.use_naive_attn = True
             else:
-                self.attn_func = flash_attn_varlen_func
-                logger.debug("Using CK FA in ROCmBackend")
+                try:
+                    from flash_attn import flash_attn_varlen_func  # noqa: F401
+                    self.attn_func = flash_attn_varlen_func
+                    logger.debug("Using CK FA in ROCmBackend")
+                except ModuleNotFoundError:
+                    self.use_naive_attn = True
 
             if self.use_naive_attn:
                 if logits_soft_cap is not None:
