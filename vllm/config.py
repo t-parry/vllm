@@ -164,7 +164,7 @@ class ModelConfig:
             pooling_norm: Optional[bool] = None,
             pooling_softmax: Optional[bool] = None,
             pooling_step_tag_id: Optional[int] = None,
-            pooling_returned_token_ids: Optional[List[int]] = None) -> None:
+            pooling_returned_token_ids: Optional[List[int]] = None,) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.tokenizer_mode = tokenizer_mode
@@ -703,6 +703,7 @@ class CacheConfig:
         sliding_window: Optional[int] = None,
         enable_prefix_caching: bool = False,
         cpu_offload_gb: float = 0,
+        calculate_kv_scales: Optional[bool] = None,
     ) -> None:
         self.block_size = block_size
         self.gpu_memory_utilization = gpu_memory_utilization
@@ -713,7 +714,7 @@ class CacheConfig:
         self.sliding_window = sliding_window
         self.enable_prefix_caching = enable_prefix_caching
         self.cpu_offload_gb = cpu_offload_gb
-
+        self.calculate_kv_scales = calculate_kv_scales
         self._verify_args()
         self._verify_cache_dtype()
         self._verify_prefix_caching()
@@ -721,6 +722,10 @@ class CacheConfig:
         # Will be set after profiling.
         self.num_gpu_blocks: Optional[int] = None
         self.num_cpu_blocks: Optional[int] = None
+
+        # Set calculate_kv_scales to False if the value is unset.
+        if self.calculate_kv_scales is None:
+            self.calculate_kv_scales = False
 
     def metrics_info(self):
         # convert cache_config to dict(key: str, value: str) for prometheus

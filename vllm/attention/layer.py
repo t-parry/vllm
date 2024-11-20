@@ -38,11 +38,13 @@ class Attention(nn.Module):
         prefix: str = "",
     ) -> None:
         super().__init__()
+        self.calculate_kv_scales = False
         if cache_config is not None:
             kv_cache_dtype = cache_config.cache_dtype
             block_size = cache_config.block_size
             sliding_window = cache_config.sliding_window
             is_attention_free = cache_config.is_attention_free
+            self.calculate_kv_scales = cache_config.calculate_kv_scales
         else:
             kv_cache_dtype = "auto"
             block_size = 16
@@ -57,8 +59,8 @@ class Attention(nn.Module):
         # expect the pre-quantized k/v_scale to be loaded along
         # with the model weights.
         self.kv_cache_dtype = kv_cache_dtype
-        self._k_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32, requires_grad=False)
-        self._v_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32, requires_grad=False)
+        self._k_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32)
+        self._v_scale = torch.tensor(1.0, device='cuda', dtype=torch.float32)
         quant_method = quant_config.get_quant_method(
             self, prefix=prefix) if quant_config else None
         if quant_method is not None:
@@ -85,6 +87,9 @@ class Attention(nn.Module):
         self.impl = impl_cls(num_heads, head_size, scale, num_kv_heads,
                              alibi_slopes, sliding_window, kv_cache_dtype,
                              blocksparse_params, logits_soft_cap)
+        
+        self.enable_kv_scale_calc = False
+        
 
     def forward(
         self,
@@ -96,6 +101,9 @@ class Attention(nn.Module):
         attn_type: AttentionType = AttentionType.DECODER,
         fp8_out_scale: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        if self.enable_kv_scale_calc and self.calculate_kv_scales:
+            self.calc_kv_scales(key, value)
+        
         return self.impl.forward(query,
                                  key,
                                  value,
@@ -106,6 +114,13 @@ class Attention(nn.Module):
                                  attn_type=attn_type,
                                  fp8_out_scale=fp8_out_scale)
 
+    def calc_kv_scales(self, key, value):
+        self._k_scale.copy_(torch.abs(key).max() / 100)
+        self._v_scale.copy_(torch.abs(value).max() / 50)
+
+        #We only calculate the scales once
+        self.enable_kv_scale_calc = False
+    
     def extra_repr(self) -> str:
         s = f"head_size={self.impl.head_size}"  # type: ignore
         s += f", num_heads={self.impl.num_heads}"  # type: ignore

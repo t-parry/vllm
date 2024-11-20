@@ -191,6 +191,7 @@ class EngineArgs:
     pooling_softmax: Optional[bool] = None
     pooling_step_tag_id: Optional[int] = None
     pooling_returned_token_ids: Optional[List[int]] = None
+    calculate_kv_scales: Optional[bool] = None
 
     def __post_init__(self):
         if not self.tokenizer:
@@ -908,6 +909,15 @@ class EngineArgs:
             "indices for the vocabulary dimensions to be extracted, "
             "such as the token IDs of good_token and bad_token in "
             "the math-shepherd-mistral-7b-prm model.")
+        
+        parser.add_argument('--calculate-kv-scales',
+                            action='store_true',
+                            help='This enables on the fly calculation of '
+                            'of k_scale and v_scale if no scales are present '
+                            'in the model checkpoint and none are provided in '
+                            'a JSON file via --quantization-param-path. If '
+                            'calculate-kv-scales is false, the scales will '
+                            'instead defaulto 1.0.')
 
         return parser
 
@@ -1014,6 +1024,7 @@ class EngineArgs:
             sliding_window=model_config.get_sliding_window(),
             enable_prefix_caching=self.enable_prefix_caching,
             cpu_offload_gb=self.cpu_offload_gb,
+            calculate_kv_scales=self.calculate_kv_scales,
         )
         parallel_config = ParallelConfig(
             pipeline_parallel_size=self.pipeline_parallel_size,
