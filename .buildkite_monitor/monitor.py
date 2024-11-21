@@ -120,8 +120,10 @@ result_df_amd = calculate_wait_time(result_df_amd)
 
 try:
     alerts_sent = pd.read_csv(PATH_TO_LOGS + 'alerts_sent.csv')
+    alerts_sent.columns = alerts_sent.columns.str.replace(' ', '')
 except:
     alerts_sent = pd.DataFrame()
+
 
 def log_alerts(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr=AGENT_FAILED_BUILDS_THR):
     alerts = []
