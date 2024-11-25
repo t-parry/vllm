@@ -31,6 +31,7 @@ LAST_24_HOURS = (datetime.utcnow() - pd.Timedelta(hours=24)).strftime('%Y-%m-%dT
 WAITING_TIME_ALERT_THR = 10800 # 3 hours
 AGENT_FAILED_BUILDS_THR = 3 # agents declaired unhealthy if they have failed jobs from >=3 unique builds
 RECIPIENTS = ['hissu.hyvarinen@amd.com', 'olga.miroshnichenko@amd.com', 'alexei.ivanov@amd.com']
+
 PATH_TO_LOGS = '/mnt/home/buildkite_logs/'
 
 params = {
@@ -87,7 +88,7 @@ df = types_fix(df, jobs=False)
 
 
 
-useful_columns = ['id', 'web_url', 'url', 'number', 'state', 'cancel_reason', 'blocked', 'blocked_state', 'jobs']
+useful_columns = ['id', 'web_url', 'url', 'number', 'state', 'cancel_reason', 'blocked', 'blocked_state', 'jobs', 'branch']
 d = df[useful_columns]
 
 jobs_df = pd.json_normalize(df['jobs'].explode())
@@ -139,7 +140,15 @@ def log_alerts(df, wait_time_thr=WAITING_TIME_ALERT_THR, agent_failed_builds_thr
             alerts.append(alert_message)
             alerts_df = pd.concat([alerts_df, new_row], ignore_index=True)
     
-    
+    # failing job on main branch        
+    for _, row in df.iterrows():
+        if row['branch'] == 'main' and row['state_job']=='failed' and row['soft_failed']==False:
+            new_row = pd.DataFrame.from_records({'time': now, 'alert_type': 'job_fail_main', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
+                       'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.nan, 'failed_builds': [[]]}) 
+            alert_message = f"Job {row['name']} from build number {row['number']} has failed on main branch. More info at {row['web_url_job']}"
+            alerts.append(alert_message)
+            alerts_df = pd.concat([alerts_df, new_row], ignore_index=True)
+
     # agent health alert:
     failed_jobs_from_diff_builds = df[(df.state_job=='failed') & (df.soft_failed==False)].groupby(['agent_id', 'agent_name', 'agent_web_url'], as_index=False).agg(nunique_failed_builds=('id_build', 'nunique'), failed_builds=('id_build', 'unique'))
     
@@ -174,7 +183,19 @@ def alert(df, alerts_sent=alerts_sent, wait_time_thr=WAITING_TIME_ALERT_THR, age
             alerts.append(alert_message)
             alerts_df = pd.concat([alerts_df, new_row], ignore_index=True)
     
-    
+    # failing job on main branch        
+    for _, row in df.iterrows():
+        if row['branch'] == 'main' and row['state_job']=='failed' and row['soft_failed']==False:
+            if not alerts_sent.empty:
+                value_exists_in_column = alerts_sent[alerts_sent.alert_type=='job_fail_main']['id_job'].isin([row['id_job']]).any()
+                if value_exists_in_column:
+                    continue
+            new_row = pd.DataFrame.from_records({'time': now, 'alert_type': 'job_fail_main', 'id_job': row['id_job'], 'state_job': row['state_job'], 'name': row['name'], 'number': row['number'], 'id_build': row['id_build'], 'waited_seconds': row['waited_seconds'],  
+                       'web_url_job': row['web_url_job'], 'agent_id': row['agent_id'], 'agent_name': row['agent_name'], 'agent_web_url': row['agent_web_url'], 'nunique_failed_builds': np.nan, 'failed_builds': [[]]}) 
+            alert_message = f"Job {row['name']} from build number {row['number']} has failed on main branch. More info at {row['web_url_job']}"
+            alerts.append(alert_message)
+            alerts_df = pd.concat([alerts_df, new_row], ignore_index=True)
+
     # agent health alert:
     failed_jobs_from_diff_builds = df[(df.state_job=='failed') & (df.soft_failed==False)].groupby(['agent_id', 'agent_name', 'agent_web_url'], as_index=False).agg(nunique_failed_builds=('id_build', 'nunique'), failed_builds=('id_build', 'unique'))
     
