@@ -58,9 +58,9 @@ The  gemms are automatically enabled in the docker image, and all stored gemm co
 
 To make it easier to run fp8 Llama 3.1 models on MI300X, the quantized checkpoints are available on AMD Huggingface space as follows 
 
-- https://huggingface.co/amd/Meta-Llama-3.1-8B-Instruct-FP8-KV 
-- https://huggingface.co/amd/Meta-Llama-3.1-70B-Instruct-FP8-KV 
-- https://huggingface.co/amd/Meta-Llama-3.1-405B-Instruct-FP8-KV
+- https://huggingface.co/amd/Llama-3.1-8B-Instruct-FP8-KV 
+- https://huggingface.co/amd/Llama-3.1-70B-Instruct-FP8-KV 
+- https://huggingface.co/amd/Llama-3.1-405B-Instruct-FP8-KV
 - https://huggingface.co/amd/grok-1-FP8-KV
 
 Currently these models are private. Please join https://huggingface.co/amd to access. 
@@ -72,7 +72,7 @@ These FP8 quantized checkpoints were generated with AMD’s Quark Quantizer. For
 ### Quantize your own models
 This step is optional for you to use quantized models on your own. Take Llama 3.1 405B as an example. 
 
-Download the Model View the Meta-Llama-3.1-405B model at https://huggingface.co/meta-llama/Meta-Llama-3.1-405B. Ensure that you have been granted access, and apply for it if you do not have access.
+Download the Model View the Meta-Llama-3.1-405B model at https://huggingface.co/meta-llama/Llama-3.1-405B. Ensure that you have been granted access, and apply for it if you do not have access.
 
 If you do not already have a HuggingFace token, open your user profile (https://huggingface.co/settings/profile), select "Access Tokens", press "+ Create New Token", and create a new Read token.
 
@@ -92,18 +92,18 @@ Create the directory for Llama 3.1 models (if it doesn't already exist)
 
 Download the model
 
-    huggingface-cli download meta-llama/Meta-Llama-3.1-405B-Instruct --exclude "original/*" --local-dir /data/llama-3.1/Meta-Llama-3.1-405B-Instruct
+    huggingface-cli download meta-llama/Llama-3.1-405B-Instruct --exclude "original/*" --local-dir /data/llama-3.1/Llama-3.1-405B-Instruct
 
-Similarly, you can download Meta-Llama-3.1-70B and Meta-Llama-3.1-8B.
+Similarly, you can download Llama-3.1-70B and Llama-3.1-8B.
 
 [Download and install Quark](https://quark.docs.amd.com/latest/install.html)
 
 Run the quantization script in the example folder using the following command line:
-export MODEL_DIR = [local model checkpoint folder] or meta-llama/Meta-Llama-3.1-405B-Instruct
+export MODEL_DIR = [local model checkpoint folder] or meta-llama/Llama-3.1-405B-Instruct
 #### single GPU
         python3 quantize_quark.py \ 
         --model_dir $MODEL_DIR \
-        --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
+        --output_dir Llama-3.1-405B-Instruct-FP8-KV \                           
         --quant_scheme w_fp8_a_fp8 \
         --kv_cache_dtype fp8 \
         --num_calib_data 128 \
@@ -113,7 +113,7 @@ export MODEL_DIR = [local model checkpoint folder] or meta-llama/Meta-Llama-3.1-
 #### If model size is too large for single GPU, please use multi GPU instead.
         python3 quantize_quark.py \ 
         --model_dir $MODEL_DIR \
-        --output_dir Meta-Llama-3.1-405B-Instruct-FP8-KV \                           
+        --output_dir Llama-3.1-405B-Instruct-FP8-KV \                           
         --quant_scheme w_fp8_a_fp8 \
         --kv_cache_dtype fp8 \
         --num_calib_data 128 \
@@ -131,7 +131,7 @@ Download and launch the docker,
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
     -v /data/llama-3.1:/data/llm \
-    docker pull rocm/vllm-dev:20241114-tuned
+    docker pull rocm/vllm-dev:main
 
 ### Benchmark with AMD vLLM Docker
 
